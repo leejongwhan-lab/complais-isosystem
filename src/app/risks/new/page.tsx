@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { supabase } from "@/lib/supabase";
 import type { RiskType, RiskResponse } from "@/types/risk";
+import UserPicker from "@/components/common/UserPicker";
 
 const INPUT_STYLE = {
   width: "100%", padding: "8px 12px", fontSize: 13,
@@ -55,6 +56,7 @@ export default function RiskNewPage() {
   const router = useRouter();
   const year   = new Date().getFullYear();
 
+  const [companyId, setCompanyId] = useState("");
   const [riskCount, setRiskCount] = useState(0);
   const [form, setForm] = useState({
     type:        "risk" as RiskType,
@@ -76,6 +78,13 @@ export default function RiskNewPage() {
       .from("risks")
       .select("*", { count: "exact", head: true })
       .then(({ count }) => setRiskCount(count ?? 0));
+
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data: profile } = await supabase.from("profiles").select("company_id, full_name").eq("id", user.id).single();
+      if (profile?.company_id) setCompanyId(profile.company_id as string);
+      if (profile?.full_name) setForm(p => ({ ...p, owner_name: (profile.full_name as string) || p.owner_name }));
+    });
   }, []);
 
   const riskNumber = `RISK-${year}-${String(riskCount + 1).padStart(3, "0")}`;
@@ -259,9 +268,12 @@ export default function RiskNewPage() {
             <div style={{ display: "flex", gap: 12, marginBottom: 28 }}>
               <div style={{ flex: 1 }}>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>담당자</label>
-                <input type="text" value={form.owner_name} onChange={e => setForm(p => ({ ...p, owner_name: e.target.value }))}
-                  placeholder="담당자 이름" style={INPUT_STYLE}
-                  className="focus:border-[#3B5BDB] transition-colors placeholder:text-[#bbb]" />
+                <UserPicker
+                  value={form.owner_name}
+                  onChange={name => setForm(p => ({ ...p, owner_name: name }))}
+                  placeholder="담당자 이름"
+                  companyId={companyId}
+                />
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>마감일</label>

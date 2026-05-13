@@ -187,8 +187,21 @@ export default function SupplierClientView({ suppliers, canWrite = false }: { su
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: "center", padding: "48px 0", fontSize: 14, color: "#999999" }}>
-                  해당하는 공급자가 없습니다.
+                <td colSpan={8} style={{ textAlign: "center", padding: "64px 0" }}>
+                  {suppliers.length === 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 36 }}>🏢</span>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#333" }}>아직 등록된 공급자가 없습니다</p>
+                      <p style={{ margin: 0, fontSize: 13, color: "#999" }}>협력업체 및 공급자를 등록하고 평가를 관리하세요.</p>
+                      {canWrite && (
+                        <a href="/suppliers/new" style={{ marginTop: 4, padding: "7px 20px", borderRadius: 6, background: "#3B5BDB", color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                          + 공급자 등록
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 14, color: "#999" }}>해당하는 공급자가 없습니다.</span>
+                  )}
                 </td>
               </tr>
             ) : (

@@ -11,14 +11,22 @@ export default async function CompliancePage() {
   const currentYear = new Date().getFullYear();
 
   // ── KPI 데이터 ────────────────────────────────────────────
-  const [kpiMasterRes, kpiActualsRes] = await Promise.all([
+  const [kpiMasterRes, kpiActualsRes, kpiSelectionsRes] = await Promise.all([
     supabase.from("kpi_master").select("*").eq("is_active", true).order("category_esg").order("sort_order"),
     companyId
       ? supabase.from("kpi_actuals").select("*").eq("company_id", companyId)
       : Promise.resolve({ data: [] }),
+    companyId
+      ? supabase.from("kpi_master_selections").select("kpi_code").eq("company_id", companyId)
+      : Promise.resolve({ data: [] }),
   ]);
-  const kpiMaster = (kpiMasterRes.data ?? []) as KpiMaster[];
+  const allKpis = (kpiMasterRes.data ?? []) as KpiMaster[];
+  const kpiSelections = ((kpiSelectionsRes.data ?? []) as { kpi_code: string }[]).map(r => r.kpi_code);
+  const kpiMaster = kpiSelections.length > 0
+    ? allKpis.filter(k => kpiSelections.includes(k.kpi_code))
+    : allKpis;
   const kpiActuals = (kpiActualsRes.data ?? []) as KpiActual[];
+  console.log('[compliance] kpi_master:', allKpis?.length, 'kpiActuals:', kpiActuals.length, 'companyId:', companyId);
 
   // ── 물질수지 데이터 ───────────────────────────────────────
   const [mbItemsRes, mbActualsRes, efRes] = await Promise.all([
@@ -75,6 +83,8 @@ export default async function CompliancePage() {
         mbActuals={mbActuals}
         emissionFactors={emissionFactors}
         currentYear={currentYear}
+        allKpis={allKpis}
+        kpiSelections={kpiSelections}
       />
     </AppLayout>
   );

@@ -45,11 +45,19 @@ export default function DocumentRightPanel({
         <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em" }}>
           문서번호 미리보기
         </p>
-        <div style={{ background: "#F0F4FF", border: "1px solid #C5D0FF", borderRadius: 8, padding: "14px 12px", textAlign: "center" }}>
-          <span style={{ fontFamily: "'JetBrains Mono', 'Fira Mono', 'Courier New', monospace", fontSize: 18, fontWeight: 700, color: "#3B5BDB", letterSpacing: "0.04em" }}>
-            {docNumberPreview}
-          </span>
-        </div>
+        {docNumberPreview && docNumberPreview !== "번호미정" ? (
+          <div style={{ background: "#F0F4FF", border: "1px solid #C5D0FF", borderRadius: 8, padding: "14px 12px", textAlign: "center" }}>
+            <span style={{ fontFamily: "'JetBrains Mono', 'Fira Mono', 'Courier New', monospace", fontSize: 18, fontWeight: 700, color: "#3B5BDB", letterSpacing: "0.04em" }}>
+              {docNumberPreview}
+            </span>
+          </div>
+        ) : (
+          <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 8, padding: "12px", textAlign: "center" }}>
+            <p style={{ margin: 0, fontSize: 12, color: "#92400E", fontWeight: 500 }}>
+              ⚠ 설정에서 회사 코드를 먼저 입력하세요
+            </p>
+          </div>
+        )}
       </div>
 
       <div>

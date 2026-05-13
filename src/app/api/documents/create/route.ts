@@ -34,14 +34,17 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json() as CreateDocumentBody;
-  if (!body.company_code || !body.layer || !body.process_no || !body.doc_type || !body.title?.trim()) {
+  if (!body.layer || !body.process_no || !body.doc_type || !body.title?.trim()) {
     return NextResponse.json({ error: "필수 입력값이 누락되었습니다." }, { status: 400 });
   }
+
+  // company_code 없으면 임시번호로 저장 (나중에 재채번 가능)
+  const effectiveCompanyCode = body.company_code?.trim() || `TEMP-${Date.now()}`;
 
   let createdDocumentId: string | null = null;
 
   try {
-    const doc = await insertDocumentWithGeneratedNumber(supabase, body.company_code, {
+    const doc = await insertDocumentWithGeneratedNumber(supabase, effectiveCompanyCode, {
       layer: body.layer,
       process_no: body.process_no,
       doc_type: body.doc_type,

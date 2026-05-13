@@ -3,6 +3,7 @@ import AppLayout from "@/components/layout/AppLayoutServer";
 import AuditClientView from "@/components/audit/AuditClientView";
 import { supabase } from "@/lib/supabase";
 import { getUserProfile } from "@/lib/supabase-server";
+import { getCompany } from "@/lib/company";
 import { canWrite } from "@/lib/permissions";
 import type { Audit } from "@/types/audit";
 
@@ -15,11 +16,21 @@ function ContentSpinner() {
 }
 
 async function AuditContent() {
-  const [{ data, error }, profile] = await Promise.all([
-    supabase.from("audits").select("*").order("planned_date", { ascending: false }),
-    getUserProfile(),
-  ]);
+  const [company, profile] = await Promise.all([getCompany(), getUserProfile()]);
+  const companyId = company?.id ?? "";
   const writeOk = canWrite(profile?.role ?? "viewer");
+
+  if (!companyId) {
+    return <AuditClientView audits={[]} canWrite={writeOk} />;
+  }
+
+  const { data, error } = await supabase
+    .from("audits")
+    .select("*")
+    .eq("company_id", companyId)
+    .order("planned_date", { ascending: false });
+
+  console.log('[audit] count:', data?.length, 'error:', error?.message);
 
   if (error) {
     return (

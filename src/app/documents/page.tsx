@@ -27,9 +27,9 @@ function ErrorState({ message }: { message: string }) {
 }
 
 async function DocumentsContent({
-  layer, type, status, q,
+  layer, type, status, q, mine,
 }: {
-  layer?: string; type?: string; status?: string; q?: string;
+  layer?: string; type?: string; status?: string; q?: string; mine?: string;
 }) {
   const [allDocsRes, profile] = await Promise.all([
     supabase.from("documents").select("layer, doc_type, status"),
@@ -59,6 +59,7 @@ async function DocumentsContent({
   if (type)   query = query.eq("doc_type", type);
   if (status) query = query.eq("status",   status);
   if (q)      query = query.or(`title.ilike.%${q}%,doc_number.ilike.%${q}%`);
+  if (mine === "1" && profile?.full_name) query = query.eq("owner_name", profile.full_name);
 
   const { data: filteredData } = await query;
   const documents = (filteredData ?? []) as Document[];
@@ -143,13 +144,13 @@ async function DocumentsContent({
 export default async function DocumentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ layer?: string; type?: string; status?: string; q?: string }>;
+  searchParams: Promise<{ layer?: string; type?: string; status?: string; q?: string; mine?: string }>;
 }) {
-  const { layer, type, status, q } = await searchParams;
+  const { layer, type, status, q, mine } = await searchParams;
   return (
     <AppLayout>
       <Suspense fallback={<ContentSpinner />}>
-        <DocumentsContent layer={layer} type={type} status={status} q={q} />
+        <DocumentsContent layer={layer} type={type} status={status} q={q} mine={mine} />
       </Suspense>
     </AppLayout>
   );

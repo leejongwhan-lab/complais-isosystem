@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type { Company } from "@/lib/company";
 import { ROLE_LABELS } from "@/lib/permissions";
+import { supabase } from "@/lib/supabase";
 
 // ── 페이지 타이틀 매핑 ──────────────────────────────────────
 const TITLE_MAP: Array<{ prefix: string; exact?: boolean; title: string }> = [
@@ -113,6 +114,111 @@ type NavItem = {
 };
 
 type NavSection = { label: string; items: NavItem[] };
+
+// ── 알림 벨 ─────────────────────────────────────────────────
+function NotificationBell({ router }: { router: ReturnType<typeof useRouter> }) {
+  const [open, setOpen] = useState(false);
+  const [overdueCapas, setOverdueCapas] = useState(0);
+  const [reviewDocs,   setReviewDocs]   = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    supabase.from("capas")
+      .select("id", { count: "exact", head: true })
+      .lt("due_date", today)
+      .neq("status", "completed")
+      .then(({ count }) => setOverdueCapas(count ?? 0));
+    supabase.from("documents")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "review")
+      .then(({ count }) => setReviewDocs(count ?? 0));
+  }, []);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const total = overdueCapas + reviewDocs;
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{ position: "relative", padding: 7, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
+        className="hover:bg-[#F5F5F5] transition-colors"
+      >
+        <Bell size={18} color="#666666" />
+        {total > 0 && (
+          <span style={{
+            position: "absolute", top: 4, right: 4, minWidth: 14, height: 14,
+            background: "#E03131", color: "#fff", borderRadius: 7,
+            fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center",
+            justifyContent: "center", padding: "0 3px",
+          }}>
+            {total > 9 ? "9+" : total}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", right: 0,
+          background: "#fff", border: "1px solid #E5E5E5", borderRadius: 10,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.10)", zIndex: 200,
+          minWidth: 240, padding: 8,
+        }}>
+          <p style={{ margin: "0 0 8px 8px", fontSize: 11, fontWeight: 700, color: "#999", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            알림
+          </p>
+          {overdueCapas === 0 && reviewDocs === 0 && (
+            <div style={{ padding: "12px 8px", fontSize: 12, color: "#bbb", textAlign: "center" }}>
+              새 알림이 없습니다
+            </div>
+          )}
+          {overdueCapas > 0 && (
+            <button
+              onClick={() => { router.push("/capa?tab=기한초과"); setOpen(false); }}
+              style={{
+                display: "flex", alignItems: "center", gap: 10, width: "100%",
+                padding: "8px 10px", border: "none", borderRadius: 6, background: "#FFF0F0",
+                cursor: "pointer", textAlign: "left",
+              }}
+              className="hover:bg-[#FFE5E5] transition-colors"
+            >
+              <span style={{ fontSize: 15 }}>⚠</span>
+              <div>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#E03131" }}>기한 초과 CAPA</p>
+                <p style={{ margin: 0, fontSize: 11, color: "#E03131" }}>{overdueCapas}건 즉시 확인 필요</p>
+              </div>
+            </button>
+          )}
+          {reviewDocs > 0 && (
+            <button
+              onClick={() => { router.push("/documents?status=review"); setOpen(false); }}
+              style={{
+                display: "flex", alignItems: "center", gap: 10, width: "100%",
+                padding: "8px 10px", border: "none", borderRadius: 6, background: "#EEF2FF",
+                cursor: "pointer", textAlign: "left", marginTop: overdueCapas > 0 ? 4 : 0,
+              }}
+              className="hover:bg-[#E0E8FF] transition-colors"
+            >
+              <span style={{ fontSize: 15 }}>📄</span>
+              <div>
+                <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#3B5BDB" }}>검토 대기 문서</p>
+                <p style={{ margin: 0, fontSize: 11, color: "#3B5BDB" }}>{reviewDocs}건 검토 대기 중</p>
+              </div>
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ── 레이아웃 ────────────────────────────────────────────────
 export default function AppLayout({
@@ -266,7 +372,7 @@ export default function AppLayout({
   const TOPBAR_H = 52;
 
   return (
-    <div style={{ minWidth: 1280 }}>
+    <div style={{ minWidth: 1280, overflowX: "auto" }}>
 
       {/* ── 컨설턴트 모드 배너 ── */}
       {isConsultantMode && (
@@ -301,7 +407,7 @@ export default function AppLayout({
       {/* ── 사이드바 ── */}
       <aside style={{
         position: "fixed", left: 0, top: BANNER_H, zIndex: 40,
-        width: 220, height: `calc(100vh - ${BANNER_H}px)`,
+        width: 220, flexShrink: 0, height: `calc(100vh - ${BANNER_H}px)`,
         background: "#FFFFFF", borderRight: "1px solid #EBEBEB",
         display: "flex", flexDirection: "column",
       }}>
@@ -456,7 +562,7 @@ export default function AppLayout({
         <span style={{ fontSize: 16, fontWeight: 600, color: "#0A0A0A" }}>
           {getTitle(pathname)}
         </span>
-        <div style={{ display: "flex", gap: 4, marginLeft: 14, flex: 1, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 4, marginLeft: 14, flex: 1, alignItems: "center" }}>
           {company && STD_BADGES.filter(b => company[b.key]).map(b => (
             <span key={b.key} style={{
               fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 100,
@@ -476,14 +582,13 @@ export default function AppLayout({
               {roleLabel}
             </span>
           )}
-          {[Search, Bell].map((Icon, i) => (
-            <button key={i}
-              style={{ padding: 7, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
-              className="hover:bg-[#F5F5F5] transition-colors"
-            >
-              <Icon size={18} color="#666666" />
-            </button>
-          ))}
+          <button
+            style={{ padding: 7, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center" }}
+            className="hover:bg-[#F5F5F5] transition-colors"
+          >
+            <Search size={18} color="#666666" />
+          </button>
+          <NotificationBell router={router} />
           <Link
             href="/settings"
             title="설정"
@@ -511,7 +616,7 @@ export default function AppLayout({
       </header>
 
       {/* ── 메인 콘텐츠 ── */}
-      <div className="print-main" style={{ marginLeft: 220, paddingTop: TOPBAR_H + BANNER_H, minHeight: "100vh", background: "#FFFFFF" }}>
+      <div className="print-main" style={{ marginLeft: 220, paddingTop: TOPBAR_H + BANNER_H, minHeight: "100vh", background: "#FFFFFF", flex: 1, minWidth: 0, overflow: "hidden" }}>
         {children}
       </div>
     </div>

@@ -184,7 +184,7 @@ export default function SettingsCorpClient({ company }: { company: Company | nul
   );
 
   return (
-    <div style={{ maxWidth: 740, margin: "0 auto", padding: "28px 24px" }}>
+    <div style={{ padding: "28px 32px" }}>
       {/* 헤더 */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div>

@@ -136,6 +136,16 @@ ALTER TABLE material_balance_items  DISABLE ROW LEVEL SECURITY;
 ALTER TABLE material_balance_actuals DISABLE ROW LEVEL SECURITY;
 ALTER TABLE emission_factor_master  DISABLE ROW LEVEL SECURITY;
 
+-- ── ESG KPI 선택 테이블 ───────────────────────────────────
+CREATE TABLE IF NOT EXISTS kpi_master_selections (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id uuid REFERENCES companies(id),
+  kpi_code   text NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(company_id, kpi_code)
+);
+ALTER TABLE kpi_master_selections DISABLE ROW LEVEL SECURITY;
+
 -- ── 배출계수 기본 데이터 (환경부 고시 2022-208호) ──────────
 INSERT INTO emission_factor_master
   (fuel_code, fuel_name, fuel_type, factor_year,

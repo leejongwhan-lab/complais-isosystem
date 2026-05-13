@@ -276,6 +276,37 @@ export default function UsersClientView({ users: initial, myId }: { users: UserR
       </div>
 
       {showInvite && <InviteModal onClose={() => setShowInvite(false)} />}
+
+      {/* complais 유입 배너 */}
+      <div style={{
+        marginTop: 28, borderRadius: 10, background: "#EEF2FF",
+        border: "1px solid #C5D0FF", padding: "18px 22px",
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+      }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+          <span style={{ fontSize: 24, flexShrink: 0 }}>👥</span>
+          <div>
+            <p style={{ margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: "#1a1a1a" }}>
+              더 많은 직원을 초대하고 인증기관과 연결하려면 complais를 시작하세요
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: "#555" }}>
+              complais 플랫폼에서 조직을 관리하고 인증기관 심사 데이터를 ISOSystem과 연동할 수 있습니다.
+            </p>
+          </div>
+        </div>
+        <a
+          href="https://complais.kr"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            flexShrink: 0, padding: "8px 18px", borderRadius: 7,
+            background: "#3B5BDB", color: "#fff", fontSize: 12, fontWeight: 700,
+            textDecoration: "none", whiteSpace: "nowrap",
+          }}
+        >
+          complais 바로가기 →
+        </a>
+      </div>
     </div>
   );
 }

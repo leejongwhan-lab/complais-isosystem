@@ -13,6 +13,7 @@ import {
 } from "@/lib/document-templates";
 import { ChevronRight, Check, FileText, Upload, Sparkles, Copy } from "lucide-react";
 import TurtleDiagram, { type TurtleData } from "@/components/documents/TurtleDiagram";
+import UserPicker from "@/components/common/UserPicker";
 
 // ── 상수 ──────────────────────────────────────────────────────
 const LAYER_LABELS: Record<string, string> = {
@@ -418,6 +419,7 @@ export default function NewDocumentPage() {
   const [saving, setSaving] = useState(false);
 
   const [companyCode, setCompanyCode] = useState<string>("");
+  const [companyId,   setCompanyId]   = useState<string>("");
   const [companyTemplateProfile, setCompanyTemplateProfile] = useState<CompanyTemplateProfile>({ businessType: null, standards: {} });
 
   const [layer,        setLayer]        = useState("");
@@ -460,6 +462,7 @@ export default function NewDocumentPage() {
       const { data: profile } = await supabase
         .from("profiles").select("company_id, full_name").eq("id", user.id).single();
       if (!profile?.company_id) return;
+      setCompanyId(profile.company_id as string);
       const { data: company } = await supabase
         .from("companies")
         .select(
@@ -512,10 +515,11 @@ export default function NewDocumentPage() {
 
   useEffect(() => {
     if (!processCode) return;
-    supabase.from("documents").select("id, doc_number, title, version, status")
-      .eq("process_no", processCode).order("doc_number").limit(6)
-      .then(({ data }) => setRelatedDocs((data ?? []) as RelatedDoc[]));
-  }, [processCode]);
+    let q = supabase.from("documents").select("id, doc_number, title, version, status")
+      .eq("process_no", processCode).order("doc_number").limit(6);
+    if (companyCode) q = q.like("doc_number", `${companyCode.toUpperCase()}-%`);
+    q.then(({ data }) => setRelatedDocs((data ?? []) as RelatedDoc[]));
+  }, [processCode, companyCode]);
 
   // 문서번호 실시간 미리보기 (max 기반)
   useEffect(() => {
@@ -1022,12 +1026,21 @@ export default function NewDocumentPage() {
                     <label style={{ display: "block", marginBottom: 6, fontSize: 11, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                       담당자
                     </label>
-                    <input type="text" value={ownerName} onChange={e => {
-                      setOwnerName(e.target.value);
-                      saveDraftSnapshot({ ownerName: e.target.value });
-                    }}
-                      placeholder="홍길동" style={INPUT_STYLE}
-                      className="focus:border-[#3B5BDB] transition-colors placeholder:text-[#bbb]" />
+                    {companyId ? (
+                      <UserPicker
+                        value={ownerName}
+                        onChange={name => { setOwnerName(name); saveDraftSnapshot({ ownerName: name }); }}
+                        placeholder="홍길동"
+                        companyId={companyId}
+                      />
+                    ) : (
+                      <input type="text" value={ownerName} onChange={e => {
+                        setOwnerName(e.target.value);
+                        saveDraftSnapshot({ ownerName: e.target.value });
+                      }}
+                        placeholder="홍길동" style={INPUT_STYLE}
+                        className="focus:border-[#3B5BDB] transition-colors placeholder:text-[#bbb]" />
+                    )}
                   </div>
                   <div>
                     <label style={{ display: "block", marginBottom: 6, fontSize: 11, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: "0.05em" }}>

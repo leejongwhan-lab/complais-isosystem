@@ -12,6 +12,8 @@ export type KpiMaster = {
   name_kr: string;
   unit: string | null;
   direction: "lower_better" | "higher_better" | "target";
+  gri_code: string | null;
+  k_esg_code: string | null;
   iso_clause: string | null;
   is_mandatory: boolean;
   sort_order: number;
@@ -51,12 +53,14 @@ export default function ComplianceESGClient({
   kpiActuals: initialActuals,
   autoValues,
   currentYear,
+  selectedCodes,
 }: {
   companyId: string;
   kpiMaster: KpiMaster[];
   kpiActuals: KpiActual[];
   autoValues: Record<string, number>;
   currentYear: number;
+  selectedCodes?: string[];
 }) {
   const [tab, setTab] = useState<"E" | "S" | "G">("E");
   const [myOnly, setMyOnly] = useState(false);
@@ -74,7 +78,10 @@ export default function ComplianceESGClient({
 
   function getKpiCode(kpi: KpiMaster) { return kpi.kpi_code; }
 
+  const selSet = selectedCodes && selectedCodes.length > 0 ? new Set(selectedCodes) : null;
+
   const filtered = kpiMaster
+    .filter(k => selSet ? selSet.has(k.kpi_code) : true)
     .filter(k => k.category_esg === tab)
     .filter(k => !myOnly || k.is_mandatory)
     .sort((a, b) => a.sort_order - b.sort_order);
@@ -117,6 +124,46 @@ export default function ComplianceESGClient({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+
+      {/* ── complais 유입 배너 (상단) ── */}
+      <div style={{
+        background: "#3B5BDB", color: "#fff",
+        padding: "10px 20px", display: "flex", alignItems: "center",
+        justifyContent: "space-between", gap: 12, flexShrink: 0,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 16 }}>🔗</span>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>
+            complais 플랫폼과 연동하면 인증기관 심사 데이터가 ESG 지표에 자동 반영됩니다.
+          </p>
+        </div>
+        <a
+          href="https://complais.kr"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            padding: "5px 14px", borderRadius: 5, fontSize: 12, fontWeight: 700,
+            background: "#fff", color: "#3B5BDB", textDecoration: "none",
+            whiteSpace: "nowrap", flexShrink: 0,
+          }}
+        >
+          인증 시작하기 →
+        </a>
+      </div>
+
+      {/* ── KPI 선택 안내 (선택 없을 때) ── */}
+      {!selSet && (
+        <div style={{
+          padding: "8px 20px", background: "#FFFBEB", borderBottom: "1px solid #FDE68A",
+          display: "flex", alignItems: "center", gap: 8, flexShrink: 0,
+        }}>
+          <span style={{ fontSize: 14 }}>💡</span>
+          <p style={{ margin: 0, fontSize: 12, color: "#92400E" }}>
+            현재 전체 KPI가 표시됩니다. <strong>ESG 마스터</strong> 탭에서 추적할 KPI를 선택하면 집중 보기가 가능합니다.
+          </p>
+        </div>
+      )}
+
       {/* 툴바 */}
       <div style={{
         display: "flex", alignItems: "center", gap: 8,
@@ -290,34 +337,6 @@ export default function ComplianceESGClient({
         </table>
       </div>
 
-      {/* complais 유입 배너 */}
-      <div style={{
-        margin: "16px 20px", padding: "14px 18px", borderRadius: 8,
-        background: "#EEF2FF", border: "1px solid #BAC8FF",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexShrink: 0,
-      }}>
-        <div>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#3B5BDB" }}>
-            💡 인증기관과 연결하면 심사 데이터가 ESG 지표에 자동 반영됩니다.
-          </p>
-          <p style={{ margin: "3px 0 0", fontSize: 12, color: "#5C7CFA" }}>
-            complais 플랫폼에서 인증을 시작하세요 →
-          </p>
-        </div>
-        <a
-          href="https://complais.kr"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            padding: "7px 16px", borderRadius: 6, fontSize: 12, fontWeight: 700,
-            background: "#3B5BDB", color: "#fff", textDecoration: "none",
-            whiteSpace: "nowrap", flexShrink: 0,
-          }}
-        >
-          complais 바로가기
-        </a>
-      </div>
     </div>
   );
 }

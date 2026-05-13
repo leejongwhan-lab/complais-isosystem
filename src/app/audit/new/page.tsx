@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { supabase } from "@/lib/supabase";
 import type { AuditType } from "@/types/audit";
+import UserPicker from "@/components/common/UserPicker";
 
 const INPUT_STYLE = {
   width: "100%", padding: "8px 12px", fontSize: 13,
@@ -23,6 +24,7 @@ export default function AuditNewPage() {
   const router = useRouter();
   const year = new Date().getFullYear();
 
+  const [companyId, setCompanyId] = useState("");
   const [auditCount, setAuditCount] = useState(0);
   const [form, setForm] = useState({
     audit_type:     "system" as AuditType,
@@ -38,6 +40,13 @@ export default function AuditNewPage() {
       .from("audits")
       .select("*", { count: "exact", head: true })
       .then(({ count }) => setAuditCount(count ?? 0));
+
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data: profile } = await supabase.from("profiles").select("company_id, full_name").eq("id", user.id).single();
+      if (profile?.company_id) setCompanyId(profile.company_id as string);
+      if (profile?.full_name) setForm(p => ({ ...p, auditor_name: (profile.full_name as string) || p.auditor_name }));
+    });
   }, []);
 
   const auditNumber = `AUD-${year}-${String(auditCount + 1).padStart(2, "0")}`;
@@ -136,13 +145,11 @@ export default function AuditNewPage() {
             {/* 심사원 */}
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>심사원</label>
-              <input
-                type="text"
+              <UserPicker
                 value={form.auditor_name}
-                onChange={e => setForm(prev => ({ ...prev, auditor_name: e.target.value }))}
+                onChange={name => setForm(prev => ({ ...prev, auditor_name: name }))}
                 placeholder="심사원 이름"
-                style={INPUT_STYLE}
-                className="focus:border-[#3B5BDB] transition-colors placeholder:text-[#bbb]"
+                companyId={companyId}
               />
             </div>
 

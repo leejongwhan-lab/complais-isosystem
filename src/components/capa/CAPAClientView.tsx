@@ -39,10 +39,11 @@ function DBar({ step, status }: { step: number; status: string }) {
 }
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────
-export default function CAPAClientView({ capas, canWrite = false }: { capas: Capa[]; canWrite?: boolean }) {
+export default function CAPAClientView({ capas, canWrite = false, currentUserName = "" }: { capas: Capa[]; canWrite?: boolean; currentUserName?: string }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<FilterKey>("전체");
   const [search, setSearch] = useState("");
+  const [myOnly, setMyOnly] = useState(false);
 
   const today = useMemo(() => {
     const d = new Date(); d.setHours(0, 0, 0, 0);
@@ -73,12 +74,13 @@ export default function CAPAClientView({ capas, canWrite = false }: { capas: Cap
     if (activeTab === "진행중")   list = list.filter(c => c.status !== "completed");
     if (activeTab === "완료")     list = list.filter(c => c.status === "completed");
     if (activeTab === "기한초과") list = list.filter(c => c.due_date && c.due_date < today && c.status !== "completed");
+    if (myOnly && currentUserName) list = list.filter(c => c.owner_name === currentUserName);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(c => c.title.toLowerCase().includes(q) || c.capa_number.toLowerCase().includes(q) || c.source.toLowerCase().includes(q));
     }
     return list;
-  }, [capas, activeTab, search, today]);
+  }, [capas, activeTab, search, today, myOnly, currentUserName]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 56px)" }}>
@@ -141,6 +143,21 @@ export default function CAPAClientView({ capas, canWrite = false }: { capas: Cap
           ))}
         </div>
 
+        {currentUserName && (
+          <button
+            onClick={() => setMyOnly(v => !v)}
+            style={{
+              padding: "5px 10px", borderRadius: 4, cursor: "pointer",
+              fontSize: 12, fontWeight: myOnly ? 600 : 400,
+              border: myOnly ? "1px solid #3B5BDB" : "1px solid #E8E8E8",
+              background: myOnly ? "#EFF6FF" : "#fff",
+              color: myOnly ? "#3B5BDB" : "#555",
+            }}
+          >
+            {myOnly ? "✓ 내 CAPA" : "내 CAPA만"}
+          </button>
+        )}
+
         <div style={{ flex: 1 }} />
 
         {/* 검색 */}
@@ -191,8 +208,21 @@ export default function CAPAClientView({ capas, canWrite = false }: { capas: Cap
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: "center", padding: "48px 0", fontSize: 14, color: "#999999" }}>
-                  해당하는 CAPA가 없습니다.
+                <td colSpan={8} style={{ textAlign: "center", padding: "64px 0" }}>
+                  {capas.length === 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 36 }}>📋</span>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#333" }}>아직 등록된 CAPA가 없습니다</p>
+                      <p style={{ margin: 0, fontSize: 13, color: "#999" }}>부적합 또는 개선 사항을 CAPA로 등록하고 추적하세요.</p>
+                      {canWrite && (
+                        <a href="/capa/new" style={{ marginTop: 4, padding: "7px 20px", borderRadius: 6, background: "#3B5BDB", color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                          + CAPA 등록
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 14, color: "#999" }}>해당하는 CAPA가 없습니다.</span>
+                  )}
                 </td>
               </tr>
             ) : (

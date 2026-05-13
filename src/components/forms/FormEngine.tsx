@@ -3,19 +3,28 @@
 import { useState } from "react";
 import { FormTemplate, FormData, FormField } from "@/types/form";
 import FormTable from "./FormTable";
+import UserPicker from "@/components/common/UserPicker";
+
+const USER_FIELD_KEYS = new Set([
+  "evaluator", "manager", "reviewer", "approver", "assignee",
+  "inspector", "supervisor", "평가자", "관리자", "담당자",
+  "검토자", "승인자", "관리감독자",
+]);
 
 interface FormEngineProps {
   template: FormTemplate;
   initialData?: FormData;
   onSave?: (data: FormData, status: "draft" | "completed") => void | Promise<void>;
   readOnly?: boolean;
+  companyId?: string;
 }
 
-function FieldRow({ field, value, onChange, readOnly }: {
+function FieldRow({ field, value, onChange, readOnly, companyId }: {
   field: FormField;
   value: FormData[string];
   onChange: (v: FormData[string]) => void;
   readOnly: boolean;
+  companyId?: string;
 }) {
   const base: React.CSSProperties = {
     width: "100%", fontSize: 13, color: "#1a1a1a",
@@ -24,6 +33,17 @@ function FieldRow({ field, value, onChange, readOnly }: {
     padding: "7px 10px", outline: "none",
     boxSizing: "border-box",
   };
+
+  if (!readOnly && companyId && USER_FIELD_KEYS.has(field.key) && field.type !== "table") {
+    return (
+      <UserPicker
+        value={(value as string) ?? ""}
+        onChange={v => onChange(v)}
+        placeholder={field.placeholder ?? "이름 선택 또는 입력"}
+        companyId={companyId}
+      />
+    );
+  }
 
   if (field.type === "table") {
     const rows = (Array.isArray(value) ? value : []) as Record<string, string>[];
@@ -95,8 +115,17 @@ function FieldRow({ field, value, onChange, readOnly }: {
   );
 }
 
-export default function FormEngine({ template, initialData = {}, onSave, readOnly = false }: FormEngineProps) {
-  const [data, setData] = useState<FormData>(initialData);
+function buildInitialData(template: FormTemplate, initialData: FormData): FormData {
+  const today = new Date().toISOString().slice(0, 10);
+  const result = { ...initialData };
+  for (const f of template.fields) {
+    if (f.type === "date" && !result[f.key]) result[f.key] = today;
+  }
+  return result;
+}
+
+export default function FormEngine({ template, initialData = {}, onSave, readOnly = false, companyId }: FormEngineProps) {
+  const [data, setData] = useState<FormData>(() => buildInitialData(template, initialData));
   const [saving, setSaving] = useState(false);
 
   function set(key: string, val: FormData[string]) {
@@ -170,6 +199,7 @@ export default function FormEngine({ template, initialData = {}, onSave, readOnl
                     value={data[field.key]}
                     onChange={v => set(field.key, v)}
                     readOnly={readOnly}
+                    companyId={companyId}
                   />
                 </div>
               );

@@ -1,5 +1,6 @@
 import { Sparkles, Upload } from "lucide-react";
 import TurtleDiagram, { type TurtleData } from "@/components/documents/TurtleDiagram";
+import UserPicker from "@/components/common/UserPicker";
 import {
   APPROVAL_STEPS,
   DOC_TYPES,
@@ -24,6 +25,7 @@ export function DocumentStepOne({
   relatedIsoTouched,
   suggestedIsoClause,
   changeReason,
+  companyId,
   setLayerAndDefaults,
   setProcessAndDefaults,
   setDocTypeAndDefaults,
@@ -46,6 +48,7 @@ export function DocumentStepOne({
   relatedIsoTouched: boolean;
   suggestedIsoClause: string;
   changeReason: string;
+  companyId?: string;
   setLayerAndDefaults: (nextLayer: string) => void;
   setProcessAndDefaults: (nextProcessCode: string) => void;
   setDocTypeAndDefaults: (nextDocType: string) => void;
@@ -159,7 +162,11 @@ export function DocumentStepOne({
           <label style={{ display: "block", marginBottom: 6, fontSize: 11, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             담당자
           </label>
-          <input type="text" value={ownerName} onChange={(e) => updateOwnerName(e.target.value)} placeholder="홍길동" style={INPUT_STYLE} className="focus:border-[#3B5BDB] transition-colors placeholder:text-[#bbb]" />
+          {companyId ? (
+            <UserPicker value={ownerName} onChange={updateOwnerName} placeholder="홍길동" companyId={companyId} />
+          ) : (
+            <input type="text" value={ownerName} onChange={(e) => updateOwnerName(e.target.value)} placeholder="홍길동" style={INPUT_STYLE} className="focus:border-[#3B5BDB] transition-colors placeholder:text-[#bbb]" />
+          )}
         </div>
         <div>
           <label style={{ display: "block", marginBottom: 6, fontSize: 11, fontWeight: 600, color: "#999", textTransform: "uppercase", letterSpacing: "0.05em" }}>

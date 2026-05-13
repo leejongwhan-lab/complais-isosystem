@@ -175,8 +175,19 @@ export default function TrainingClientView({ trainings }: { trainings: Training[
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: "center", padding: "48px 0", fontSize: 13, color: "#bbb" }}>
-                  해당하는 교육이 없습니다.
+                <td colSpan={7} style={{ textAlign: "center", padding: "64px 0" }}>
+                  {trainings.length === 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 36 }}>🎓</span>
+                      <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: "#333" }}>아직 등록된 교육이 없습니다</p>
+                      <p style={{ margin: 0, fontSize: 13, color: "#999" }}>임직원 교육훈련 계획을 등록하고 이수 현황을 관리하세요.</p>
+                      <a href="/trainings/new" style={{ marginTop: 4, padding: "7px 20px", borderRadius: 6, background: "#3B5BDB", color: "#fff", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+                        + 교육 등록
+                      </a>
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 14, color: "#999" }}>해당하는 교육이 없습니다.</span>
+                  )}
                 </td>
               </tr>
             ) : (

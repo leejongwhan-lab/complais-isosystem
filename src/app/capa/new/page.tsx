@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { supabase } from "@/lib/supabase";
+import UserPicker from "@/components/common/UserPicker";
 
 const INPUT_STYLE = {
   width: "100%", padding: "8px 12px", fontSize: 13,
@@ -14,6 +15,7 @@ const INPUT_STYLE = {
 
 export default function CapaNewPage() {
   const router = useRouter();
+  const [companyId, setCompanyId] = useState("");
   const [form, setForm] = useState({
     source:      "",
     grade:       "",
@@ -24,6 +26,15 @@ export default function CapaNewPage() {
   });
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data: profile } = await supabase.from("profiles").select("company_id, full_name").eq("id", user.id).single();
+      if (profile?.company_id) setCompanyId(profile.company_id as string);
+      if (profile?.full_name) setForm(p => ({ ...p, owner_name: (profile.full_name as string) || p.owner_name }));
+    });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -124,13 +135,11 @@ export default function CapaNewPage() {
 
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#555", marginBottom: 4 }}>담당자</label>
-              <input
-                type="text"
+              <UserPicker
                 value={form.owner_name}
-                onChange={e => setForm(p => ({ ...p, owner_name: e.target.value }))}
+                onChange={name => setForm(p => ({ ...p, owner_name: name }))}
                 placeholder="담당자 이름"
-                style={INPUT_STYLE}
-                className="focus:border-[#3B5BDB] transition-colors placeholder:text-[#bbb]"
+                companyId={companyId}
               />
             </div>
 

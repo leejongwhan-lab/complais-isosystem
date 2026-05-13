@@ -6,7 +6,18 @@ import SettingsTabsClient from "@/components/settings/SettingsTabsClient";
 import type { Branch } from "@/components/settings/SettingsBranchClient";
 
 export default async function SettingsPage() {
-  const [company, profile] = await Promise.all([getCompany(), getUserProfile()]);
+  const [rawCompany, profile] = await Promise.all([getCompany(), getUserProfile()]);
+
+  // company_code 없으면 name_en 또는 company_name 앞 영문 3자리로 자동 생성
+  let company = rawCompany;
+  if (company && !company.company_code) {
+    const src = company.name_en || company.company_name || "";
+    const code = src.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 3) || "COM";
+    await supabase.from("companies").update({ company_code: code }).eq("id", company.id);
+    company = { ...company, company_code: code };
+  }
+
+  console.log('[settings] company:', company?.company_name, '| code:', company?.company_code, '| id:', company?.id);
 
   const isAdmin = profile?.role === "admin";
 

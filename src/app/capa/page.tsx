@@ -36,7 +36,7 @@ async function CAPAContent() {
     );
   }
 
-  return <CAPAClientView capas={(data ?? []) as Capa[]} canWrite={writeOk} />;
+  return <CAPAClientView capas={(data ?? []) as Capa[]} canWrite={writeOk} currentUserName={profile?.full_name ?? ""} />;
 }
 
 export default function CAPAPage() {

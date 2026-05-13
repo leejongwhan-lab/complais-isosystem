@@ -118,8 +118,8 @@ export async function insertDocumentWithGeneratedNumber(
 
 export function suggestCompanyCode(companyName: string): string {
   return companyName
-    .replace(/[^a-zA-Z가-힣]/g, "")
+    .replace(/[^a-zA-Z]/g, "")
     .toUpperCase()
     .slice(0, 3)
-    || "ABC";
+    || "COM";
 }

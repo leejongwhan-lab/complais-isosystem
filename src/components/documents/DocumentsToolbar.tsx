@@ -9,7 +9,15 @@ export default function DocumentsToolbar({ total, canWrite = false }: { total: n
   const router = useRouter();
   const sp = useSearchParams();
   const currentQ = sp.get("q") ?? "";
+  const isMine = sp.get("mine") === "1";
   const debounceRef = useRef<number | null>(null);
+
+  function toggleMine() {
+    const params = new URLSearchParams(sp.toString());
+    if (isMine) params.delete("mine");
+    else params.set("mine", "1");
+    router.push(`/documents?${params.toString()}`);
+  }
 
   function navigateWithQuery(q: string) {
     const params = new URLSearchParams(sp.toString());
@@ -50,6 +58,19 @@ export default function DocumentsToolbar({ total, canWrite = false }: { total: n
           className="focus:border-[#3B5BDB] transition-colors placeholder:text-[#bbb]"
         />
       </div>
+
+      <button
+        onClick={toggleMine}
+        style={{
+          padding: "5px 10px", borderRadius: 4, cursor: "pointer",
+          fontSize: 12, fontWeight: isMine ? 600 : 400,
+          border: isMine ? "1px solid #3B5BDB" : "1px solid #E5E5E5",
+          background: isMine ? "#EEF2FF" : "#fff",
+          color: isMine ? "#3B5BDB" : "#555",
+        }}
+      >
+        {isMine ? "✓ 내 문서" : "내 문서만"}
+      </button>
 
       <span style={{ fontSize: 12, color: "#bbb" }}>
         총 <span style={{ fontWeight: 600, color: "#555" }}>{total}</span>건

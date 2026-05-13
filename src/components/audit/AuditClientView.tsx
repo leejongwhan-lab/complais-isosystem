@@ -166,7 +166,7 @@ export default function AuditClientView({ audits, canWrite = false }: { audits: 
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={9} style={{ textAlign: "center", padding: "48px 0", fontSize: 14, color: "#999999" }}>
-                  해당하는 심사가 없습니다.
+                  {audits.length === 0 ? "등록된 심사가 없습니다." : "해당하는 심사가 없습니다."}
                 </td>
               </tr>
             ) : (

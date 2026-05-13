@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FormTemplate, FormData } from "@/types/form";
 import FormEngine from "./FormEngine";
@@ -25,6 +26,15 @@ async function genRecordNumber(formCode: string): Promise<string> {
 
 export default function FormNewClient({ template }: FormNewClientProps) {
   const router = useRouter();
+  const [companyId, setCompanyId] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data: profile } = await supabase.from("profiles").select("company_id").eq("id", user.id).single();
+      if (profile?.company_id) setCompanyId(profile.company_id as string);
+    });
+  }, []);
 
   async function handleSave(data: FormData, status: "draft" | "completed") {
     const record_number = await genRecordNumber(template.form_code);
@@ -50,7 +60,7 @@ export default function FormNewClient({ template }: FormNewClientProps) {
           {template.form_name}
         </h1>
       </div>
-      <FormEngine template={template} onSave={handleSave} />
+      <FormEngine template={template} onSave={handleSave} companyId={companyId} />
     </div>
   );
 }
