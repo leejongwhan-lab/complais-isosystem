@@ -1,0 +1,12 @@
+{
+  "name": "complAIs ISOSystem",
+  "short_name": "ISOSystem",
+  "description": "ISO 통합경영시스템 관리",
+  "theme_color": "#3B5BDB",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/",
+  "scope": "/",
+  "icons": []
+}

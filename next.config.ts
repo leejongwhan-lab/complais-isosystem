@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /* PWA manifest served from /public/manifest.json */
 };
 
 export default nextConfig;
