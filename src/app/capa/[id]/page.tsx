@@ -2,10 +2,11 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayoutServer";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { Capa } from "@/types/capa";
-import { Pencil } from "lucide-react";
+import { Pencil, FileText } from "lucide-react";
 import CAPAFiveWhyPanel from "@/components/capa/CAPAFiveWhyPanel";
+import CapaD9Panel from "@/components/capa/CapaD9Panel";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import PrintButton from "@/components/print/PrintButton";
 import PrintLayout from "@/components/print/PrintLayout";
@@ -88,13 +89,28 @@ function EightDBar({ currentStep, status }: { currentStep: number; status: strin
 }
 
 async function CAPADetailContent({ id }: { id: string }) {
-  const { data, error } = await supabase.from("capas").select("*").eq("id", id).single();
-  if (error || !data) notFound();
+  const supabase = await createSupabaseServerClient();
+  const [capaRes, docRes] = await Promise.all([
+    supabase.from("capas").select("*").eq("id", id).single(),
+    supabase.from("capas").select("related_doc_id").eq("id", id).single(),
+  ]);
+  if (capaRes.error || !capaRes.data) notFound();
 
-  const capa      = data as Capa;
+  const capa      = capaRes.data as Capa;
   const dday      = calcDday(capa.due_date);
   const completed = capa.status === "completed";
   const step      = capa.current_step ?? 1;
+
+  // fetch related doc info
+  let relatedDoc: { doc_number: string; title: string; id: string } | null = null;
+  if (capa.related_doc_id) {
+    const { data: rd } = await supabase
+      .from("documents")
+      .select("id, doc_number, title")
+      .eq("id", capa.related_doc_id)
+      .single();
+    relatedDoc = rd as { id: string; doc_number: string; title: string } | null;
+  }
 
   return (
     <PrintLayout docNumber={capa.capa_number} title={capa.title}>
@@ -131,6 +147,22 @@ async function CAPADetailContent({ id }: { id: string }) {
               {capa.owner_name && <span>담당자 <span style={{ color: "#555", fontWeight: 500 }}>{capa.owner_name}</span></span>}
               {capa.due_date   && <span>마감일 <span style={{ color: "#555", fontWeight: 500 }}>{capa.due_date}</span></span>}
             </div>
+            {/* 관련 문서 칩 */}
+            {relatedDoc && (
+              <Link
+                href={`/documents/${relatedDoc.id}`}
+                style={{
+                  marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "4px 10px", borderRadius: 5, textDecoration: "none",
+                  border: "1px solid #C5D0FF", background: "#EEF2FF",
+                  fontSize: 12, color: "#3B5BDB", fontWeight: 500,
+                }}
+              >
+                <FileText size={12} />
+                <span style={{ fontFamily: "monospace", fontWeight: 700 }}>{relatedDoc.doc_number}</span>
+                <span>{relatedDoc.title}</span>
+              </Link>
+            )}
           </div>
 
           {/* 액션 버튼 */}
@@ -315,6 +347,22 @@ async function CAPADetailContent({ id }: { id: string }) {
                   </span>
                   <span style={{ fontSize: 11, color: "#bbb" }}>{capa.due_date}</span>
                 </div>
+              </div>
+            )}
+
+            {/* D9 효과성 검증 */}
+            {(completed || step >= 8) && (
+              <div>
+                <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  D9 효과성 검증
+                </p>
+                <CapaD9Panel
+                  capaId={capa.id}
+                  d8DoneDate={capa.closed_at ?? capa.updated_at}
+                  initialStatus={capa.effectiveness_status}
+                  initialResult={capa.effectiveness_result}
+                  initialDueDate={capa.effectiveness_due_date}
+                />
               </div>
             )}
 

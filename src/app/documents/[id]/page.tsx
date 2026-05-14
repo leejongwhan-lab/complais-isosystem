@@ -149,7 +149,7 @@ function ApprovalTimeline({ approvals }: { approvals: DocumentApproval[] }) {
 // ── 메인 컨텐츠 ───────────────────────────────────────────────
 async function DocumentContent({ id }: { id: string }) {
   const supabase = await createSupabaseServerClient();
-  const [company, profile, docRes, sectionsRes, approvalsRes, versionsRes, historyRes] = await Promise.all([
+  const [company, profile, docRes, sectionsRes, approvalsRes, versionsRes, historyRes, capasRes] = await Promise.all([
     getCompany(),
     getUserProfile(),
     supabase.from("documents").select("*").eq("id", id).single(),
@@ -157,6 +157,7 @@ async function DocumentContent({ id }: { id: string }) {
     supabase.from("document_approvals").select("*").eq("document_id", id).order("step"),
     supabase.from("document_versions").select("*").eq("document_id", id).order("created_at", { ascending: false }).limit(5),
     supabase.from("document_history").select("*").eq("document_id", id).order("created_at", { ascending: false }),
+    supabase.from("capas").select("id, capa_number, title, grade, status, due_date").eq("related_doc_id", id).order("created_at", { ascending: false }).limit(10),
   ]);
 
   if (docRes.error || !docRes.data) notFound();
@@ -168,6 +169,9 @@ async function DocumentContent({ id }: { id: string }) {
   const approvals = (approvalsRes.data ?? []) as DocumentApproval[];
   const versions  = (versionsRes.data  ?? []) as DocumentVersion[];
   const history   = (historyRes.data   ?? []) as DocumentHistory[];
+
+  type CapaRow = { id: string; capa_number: string; title: string; grade: string; status: string; due_date: string | null };
+  const relatedCapas = (capasRes.data ?? []) as CapaRow[];
 
   const writeOk = checkCanWrite(profile?.role ?? "viewer");
   const isAdmin = profile?.role === "admin";
@@ -345,6 +349,41 @@ async function DocumentContent({ id }: { id: string }) {
               </div>
             ) : (
               <p style={{ fontSize: 12, color: "#bbb" }}>이력이 없습니다.</p>
+            )}
+          </div>
+
+          {/* 연관 CAPA */}
+          <div style={{ padding: "16px", borderBottom: "1px solid #F0F0F0" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+              <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: "#bbb", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                🔗 연관 CAPA
+              </p>
+              <Link href={`/capa/new?doc_id=${doc.id}`} style={{ fontSize: 11, color: "#3B5BDB", textDecoration: "none", fontWeight: 500 }}>
+                + 연결
+              </Link>
+            </div>
+            {relatedCapas.length === 0 ? (
+              <p style={{ fontSize: 12, color: "#bbb", margin: 0 }}>연관된 CAPA가 없습니다.</p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {relatedCapas.map(c => {
+                  const gradeColor = c.grade === "A" ? "#E03131" : c.grade === "B" ? "#E67700" : "#F59F00";
+                  const isDone = c.status === "completed";
+                  return (
+                    <Link key={c.id} href={`/capa/${c.id}`} style={{ textDecoration: "none", display: "flex", flexDirection: "column", gap: 3, padding: "8px 10px", borderRadius: 6, border: "1px solid #F0F0F0", background: "#FAFAFA" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                        <span style={{ fontFamily: "monospace", fontSize: 11, fontWeight: 700, color: "#3B5BDB" }}>{c.capa_number}</span>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: gradeColor }}>{c.grade}급</span>
+                        <span style={{ fontSize: 10, fontWeight: 600, marginLeft: "auto", color: isDone ? "#2F9E44" : "#3B5BDB", background: isDone ? "#F0FBF4" : "#EEF2FF", padding: "1px 5px", borderRadius: 3 }}>
+                          {isDone ? "완료" : c.status}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: 12, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title}</span>
+                      {c.due_date && !isDone && <span style={{ fontSize: 11, color: "#9CA3AF" }}>마감 {c.due_date}</span>}
+                    </Link>
+                  );
+                })}
+              </div>
             )}
           </div>
 

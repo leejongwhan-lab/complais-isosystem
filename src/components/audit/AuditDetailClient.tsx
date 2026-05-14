@@ -248,17 +248,34 @@ export default function AuditDetailClient({ audit }: { audit: Audit }) {
                         />
                       </div>
 
-                      {/* NC 안내 */}
+                      {/* NC 안내 + CAPA 생성 버튼 */}
                       {isNC && (
                         <div style={{
-                          marginTop: 10, padding: "7px 10px", borderRadius: 5,
-                          background: "#FFF0F0", border: "1px solid #FFC9C9",
-                          display: "flex", alignItems: "center", gap: 6,
+                          marginTop: 10, display: "flex", alignItems: "center", gap: 8,
                         }}>
-                          <AlertCircle size={12} color="#E03131" />
-                          <span style={{ fontSize: 11, color: "#E03131" }}>
-                            부적합 발생 시 CAPA가 자동 연계됩니다. 우측 패널에서 CAPA를 발행하세요.
-                          </span>
+                          <div style={{
+                            flex: 1, padding: "7px 10px", borderRadius: 5,
+                            background: "#FFF0F0", border: "1px solid #FFC9C9",
+                            display: "flex", alignItems: "center", gap: 6,
+                          }}>
+                            <AlertCircle size={12} color="#E03131" />
+                            <span style={{ fontSize: 11, color: "#E03131" }}>
+                              부적합 — CAPA 연계가 필요합니다
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => router.push(
+                              `/capa/new?source=audit&audit_id=${audit.id}&audit_no=${encodeURIComponent(audit.audit_number)}&title=${encodeURIComponent(item.question)}&grade=B`
+                            )}
+                            style={{
+                              padding: "6px 12px", borderRadius: 5, cursor: "pointer",
+                              fontSize: 11, fontWeight: 600, color: "#fff",
+                              background: "#E03131", border: "none", whiteSpace: "nowrap",
+                            }}
+                            className="hover:opacity-90 transition-opacity"
+                          >
+                            CAPA 생성
+                          </button>
                         </div>
                       )}
                     </div>
@@ -325,7 +342,9 @@ export default function AuditDetailClient({ audit }: { audit: Audit }) {
                 <span style={{ fontWeight: 700, color: "#E03131" }}>{summary.nc}건</span>의 부적합이 발견되었습니다.
               </p>
               <button
-                onClick={() => router.push("/capa/new")}
+                onClick={() => router.push(
+                  `/capa/new?source=audit&audit_id=${audit.id}&audit_no=${encodeURIComponent(audit.audit_number)}&grade=B`
+                )}
                 style={{
                   width: "100%", padding: "7px 0", borderRadius: 6, cursor: "pointer",
                   fontSize: 12, fontWeight: 600, color: "#fff", background: "#E03131",

@@ -47,7 +47,12 @@ async function DashboardContent() {
   const today = new Date();
   const todayIso = today.toISOString().slice(0, 10);
 
-  const [company, profile, docsRes, capaRes, auditRes, trainingRes, riskRes] = await Promise.all([
+  const sixMonthsAgo = new Date(today);
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+  sixMonthsAgo.setDate(1);
+  const sixMonthsAgoIso = sixMonthsAgo.toISOString().slice(0, 10);
+
+  const [company, profile, docsRes, capaRes, auditRes, trainingRes, riskRes, capaTrendRes] = await Promise.all([
     getCompany(),
     getUserProfile(),
     supabase
@@ -79,6 +84,10 @@ async function DashboardContent() {
       .lte("next_review_date", todayIso)
       .order("next_review_date", { ascending: true })
       .limit(6),
+    supabase
+      .from("capas")
+      .select("id, created_at, closed_at")
+      .gte("created_at", sixMonthsAgoIso),
   ]);
 
   const documents = (docsRes.data ?? []) as Array<{ id: string; title: string; status: string; updated_at: string }>;
@@ -86,6 +95,24 @@ async function DashboardContent() {
   const audits = (auditRes.data ?? []) as Array<{ id: string; audit_number: string; audit_type: string; status: string; planned_date: string | null }>;
   const trainings = (trainingRes.data ?? []) as Array<{ id: string; title: string; status: string; planned_date: string | null; total_count: number | null; completed_count: number | null }>;
   const risks = (riskRes.data ?? []) as Array<{ id: string; title: string; owner_name: string | null; next_review_date: string | null }>;
+
+  // Build 6-month CAPA trend
+  const trendMonths = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(today);
+    d.setMonth(d.getMonth() - (5 - i));
+    return { key: d.toISOString().slice(0, 7), label: `${d.getMonth() + 1}월`, created: 0, completed: 0 };
+  });
+  (capaTrendRes.data ?? []).forEach((c: { created_at: string; closed_at: string | null }) => {
+    const cm = c.created_at.slice(0, 7);
+    const m1 = trendMonths.find(m => m.key === cm);
+    if (m1) m1.created++;
+    if (c.closed_at) {
+      const dm = c.closed_at.slice(0, 7);
+      const m2 = trendMonths.find(m => m.key === dm);
+      if (m2) m2.completed++;
+    }
+  });
+  const trendMax = Math.max(...trendMonths.flatMap(m => [m.created, m.completed]), 1);
 
   const draftDocs = documents.filter((doc) => doc.status === "draft").length;
   const reviewDocs = documents.filter((doc) => doc.status === "review").length;
@@ -360,6 +387,64 @@ async function DashboardContent() {
             </div>
           </section>
         </div>
+      </div>
+
+      {/* CAPA 월별 추이 차트 */}
+      <div style={{ padding: "0 24px 28px" }}>
+        <section style={{ border: "1px solid #E5E5E5", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <strong style={{ fontSize: 13, color: "#1a1a1a" }}>CAPA 월별 추이 (최근 6개월)</strong>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: "#E03131" }} />
+                <span style={{ fontSize: 11, color: "#555" }}>발생</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 2, background: "#2F9E44" }} />
+                <span style={{ fontSize: 11, color: "#555" }}>완료</span>
+              </div>
+              <Link href="/capa" style={{ fontSize: 12, color: "#3B5BDB", textDecoration: "none" }}>전체 보기</Link>
+            </div>
+          </div>
+          <div style={{ padding: "20px 24px" }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 140 }}>
+              {trendMonths.map(month => (
+                <div key={month.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ width: "100%", display: "flex", gap: 4, alignItems: "flex-end", height: 112 }}>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                      {month.created > 0 && (
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#E03131", textAlign: "center", marginBottom: 2 }}>
+                          {month.created}
+                        </div>
+                      )}
+                      <div style={{
+                        background: "#E03131",
+                        borderRadius: "3px 3px 0 0",
+                        height: `${Math.max(Math.round((month.created / trendMax) * 100), month.created > 0 ? 4 : 0)}px`,
+                        opacity: 0.8,
+                      }} />
+                    </div>
+                    <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                      {month.completed > 0 && (
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#2F9E44", textAlign: "center", marginBottom: 2 }}>
+                          {month.completed}
+                        </div>
+                      )}
+                      <div style={{
+                        background: "#2F9E44",
+                        borderRadius: "3px 3px 0 0",
+                        height: `${Math.max(Math.round((month.completed / trendMax) * 100), month.completed > 0 ? 4 : 0)}px`,
+                        opacity: 0.8,
+                      }} />
+                    </div>
+                  </div>
+                  <div style={{ height: 1, width: "100%", background: "#E5E5E5", marginTop: 0 }} />
+                  <span style={{ fontSize: 11, color: "#999", marginTop: 6 }}>{month.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );
