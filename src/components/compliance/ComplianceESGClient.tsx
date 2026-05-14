@@ -49,15 +49,15 @@ function trendIcon(direction: KpiMaster["direction"], prev: number | null, curr:
 
 export default function ComplianceESGClient({
   companyId,
-  kpiMaster,
-  allKpis,
+  kpiMaster = [],
+  allKpis = [],
   kpiActuals: initialActuals,
   autoValues,
   currentYear,
   selectedCodes,
 }: {
   companyId: string;
-  kpiMaster: KpiMaster[];
+  kpiMaster?: KpiMaster[];
   allKpis?: KpiMaster[];
   kpiActuals: KpiActual[];
   autoValues: Record<string, number>;
@@ -246,12 +246,28 @@ export default function ComplianceESGClient({
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (
+            {filtered.length === 0 && (allKpis?.length ?? 0) === 0 && kpiMaster.length === 0 && (
+              <tr>
+                <td colSpan={years.length + 4} style={{ padding: "48px", textAlign: "center" }}>
+                  <p style={{ margin: "0 0 14px", fontSize: 13, color: "#999" }}>
+                    KPI 마스터 데이터를 불러오는 중입니다. 잠시 후 새로고침하세요.
+                  </p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    style={{
+                      padding: "6px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600,
+                      background: "#3B5BDB", color: "#fff", border: "none", cursor: "pointer",
+                    }}
+                  >
+                    새로고침
+                  </button>
+                </td>
+              </tr>
+            )}
+            {filtered.length === 0 && (allKpis?.length ?? 0) > 0 && (
               <tr>
                 <td colSpan={years.length + 4} style={{ padding: "32px", textAlign: "center", color: "#999", fontSize: 13 }}>
-                  {(allKpis?.length ?? 0) === 0 && kpiMaster.length === 0
-                    ? "KPI 마스터 데이터 없음. Supabase SQL Editor에서 schema_corp.sql을 실행하세요."
-                    : `${tab === "E" ? "환경" : tab === "S" ? "사회" : "거버넌스"} 카테고리에 해당하는 KPI가 없습니다.`}
+                  {tab === "E" ? "환경" : tab === "S" ? "사회" : "거버넌스"} 카테고리에 해당하는 KPI가 없습니다.
                 </td>
               </tr>
             )}

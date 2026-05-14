@@ -13,21 +13,32 @@ export default async function CompliancePage() {
   const companyId = company?.id ?? "";
   const currentYear = new Date().getFullYear();
 
-  // ── KPI 데이터 ────────────────────────────────────────────
-  const [kpiMasterRes, kpiActualsRes, kpiSelectionsRes] = await Promise.all([
-    supabase.from("kpi_master").select("*").order("category_esg").order("sort_order"),
+  // ── kpi_master: try-catch so 503 doesn't crash the page ──
+  let allKpis: KpiMaster[] = [];
+  try {
+    const { data, error } = await supabase
+      .from("kpi_master")
+      .select("*")
+      .order("category_esg")
+      .order("sort_order");
+    if (error) console.error("[compliance] kpi_master error:", error.message);
+    allKpis = (data ?? []) as KpiMaster[];
+  } catch (e) {
+    console.error("[compliance] kpi_master fetch threw:", e);
+  }
+
+  // ── actuals + selections ──────────────────────────────────
+  const [kpiActualsRes, kpiSelectionsRes] = await Promise.all([
     companyId
       ? supabase.from("kpi_actuals").select("*").eq("company_id", companyId)
-      : Promise.resolve({ data: [], error: null }),
+      : Promise.resolve({ data: [] as KpiActual[], error: null }),
     companyId
       ? supabase.from("kpi_master_selections").select("kpi_code").eq("company_id", companyId)
-      : Promise.resolve({ data: [], error: null }),
+      : Promise.resolve({ data: [] as { kpi_code: string }[], error: null }),
   ]);
-  if (kpiMasterRes.error) console.error("[compliance] kpi_master error:", kpiMasterRes.error.message);
   if (kpiActualsRes.error) console.error("[compliance] kpi_actuals error:", kpiActualsRes.error.message);
   if (kpiSelectionsRes.error) console.error("[compliance] kpi_master_selections error:", kpiSelectionsRes.error.message);
 
-  const allKpis = (kpiMasterRes.data ?? []) as KpiMaster[];
   const kpiSelections = ((kpiSelectionsRes.data ?? []) as { kpi_code: string }[]).map(r => r.kpi_code);
   const kpiMaster = kpiSelections.length > 0
     ? allKpis.filter(k => kpiSelections.includes(k.kpi_code))
