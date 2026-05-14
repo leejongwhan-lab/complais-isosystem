@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AppLayout from "@/components/layout/AppLayout";
 import { supabase } from "@/lib/supabase";
@@ -16,7 +16,7 @@ const INPUT_STYLE = {
 
 type DocResult = { id: string; doc_number: string; title: string };
 
-export default function CapaNewPage() {
+function CAPANewContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
 
@@ -280,5 +280,13 @@ export default function CapaNewPage() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+export default function CapaNewPage() {
+  return (
+    <Suspense fallback={<div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>로딩 중...</div>}>
+      <CAPANewContent />
+    </Suspense>
   );
 }
