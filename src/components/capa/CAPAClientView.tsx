@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import type { Capa } from "@/types/capa";
+import StatCard from "@/components/common/StatCard";
 
 // ── 상수 ──────────────────────────────────────────────────────
 const GRADE_COLOR: Record<string, string> = { A: "#E03131", B: "#E67700", C: "#F59F00" };
@@ -86,29 +87,11 @@ export default function CAPAClientView({ capas, canWrite = false, currentUserNam
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 56px)" }}>
 
       {/* ── KPI 스트립 ── */}
-      <div style={{ display: "flex", borderBottom: "1px solid #EBEBEB", flexShrink: 0 }}>
-        {[
-          { label: "전체 CAPA",   value: stats.total,            sub: "등록 건수" },
-          { label: "진행중",       value: stats.active,           sub: "미완료" },
-          { label: "기한 초과",    value: stats.overdue,          sub: "즉시 확인", danger: true },
-          { label: "이번달 완료",  value: stats.monthlyCompleted, sub: "이번달 종결", ok: true },
-        ].map((kpi, i, arr) => (
-          <div key={kpi.label} style={{
-            flex: 1, padding: "20px 24px",
-            borderRight: i < arr.length - 1 ? "1px solid #EBEBEB" : "none",
-          }}>
-            <p style={{ margin: "0 0 5px", fontSize: 12, fontWeight: 500, color: "#666666", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-              {kpi.label}
-            </p>
-            <p style={{
-              margin: "0 0 4px", fontSize: 32, fontWeight: 700, lineHeight: 1,
-              color: kpi.danger && kpi.value > 0 ? "#E03131" : kpi.ok ? "#2F9E44" : "#1a1a1a",
-            }}>
-              {kpi.value}
-            </p>
-            <p style={{ margin: 0, fontSize: 11, color: "#999999" }}>{kpi.sub}</p>
-          </div>
-        ))}
+      <div className="card-grid" style={{ padding: "16px 20px", borderBottom: "1px solid #EBEBEB", flexShrink: 0 }}>
+        <StatCard label="전체 CAPA" value={stats.total} sub="등록 건수" />
+        <StatCard label="진행중" value={stats.active} sub="미완료" />
+        <StatCard label="기한 초과" value={stats.overdue} sub="즉시 확인" color={stats.overdue > 0 ? "red" : "default"} />
+        <StatCard label="이번달 완료" value={stats.monthlyCompleted} sub="이번달 종결" color="green" />
       </div>
 
       {/* ── 툴바 ── */}

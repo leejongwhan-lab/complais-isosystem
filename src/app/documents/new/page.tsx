@@ -11,6 +11,7 @@ import {
   type DocumentTemplateContext,
   type SectionTemplate,
 } from "@/lib/document-templates";
+import { getDefaultSections } from "@/lib/sectionTemplates";
 import { ChevronRight, Check, FileText, Upload, Sparkles, Copy } from "lucide-react";
 import TurtleDiagram, { type TurtleData } from "@/components/documents/TurtleDiagram";
 import UserPicker from "@/components/common/UserPicker";
@@ -439,6 +440,7 @@ export default function NewDocumentPage() {
   const [dragging,setDragging]= useState(false);
 
   const [approvers, setApprovers] = useState<Record<number, string>>({ 1: "", 2: "", 3: "", 4: "" });
+  const [genSections, setGenSections] = useState(true);
   const [relatedDocs, setRelatedDocs]   = useState<RelatedDoc[]>([]);
   const [dbTemplate, setDbTemplate]     = useState<SectionTemplate[] | null>(null);
   const [dbIsoClause, setDbIsoClause]   = useState("");
@@ -808,6 +810,15 @@ export default function NewDocumentPage() {
       }
       const docId = json.id;
 
+      if (genSections && docType !== "F") {
+        const defaultSections = getDefaultSections(docType);
+        await fetch(`/api/documents/${docId}/sections`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sections: defaultSections }),
+        });
+      }
+
       clearDraft();
       setHasSavedDraft(false);
 
@@ -1169,6 +1180,24 @@ export default function NewDocumentPage() {
                 <p style={{ margin: "0 0 8px", fontSize: 13, color: "#555" }}>
                   결재선을 설정합니다. 이름을 비워두면 해당 단계는 생략됩니다.
                 </p>
+                {docType !== "F" && (
+                  <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", border: "1px solid #E5E5E5", borderRadius: 8, cursor: "pointer", background: genSections ? "#F0F9FF" : "#fff", marginBottom: 8 }}>
+                    <input
+                      type="checkbox"
+                      checked={genSections}
+                      onChange={e => setGenSections(e.target.checked)}
+                      style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#2563EB" }}
+                    />
+                    <div>
+                      <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#1a1a1a" }}>기본 섹션 자동 생성</p>
+                      <p style={{ margin: "2px 0 0", fontSize: 12, color: "#6B7280" }}>
+                        {docType === "P" ? "목적·범위·RACI·SIPOC·절차·KPI·위험 등 10개 섹션이 자동 생성됩니다."
+                        : docType === "M" ? "목적·범위·용어·경영시스템 개요 등 7개 섹션이 자동 생성됩니다."
+                        : "목적·범위·절차·관련문서 등 기본 섹션이 자동 생성됩니다."}
+                      </p>
+                    </div>
+                  </label>
+                )}
                 {APPROVAL_STEPS.map(s => (
                   <div key={s.step} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", border: "1px solid #E5E5E5", borderRadius: 8, background: "#fff" }}>
                     <div style={{

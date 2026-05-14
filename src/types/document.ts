@@ -20,6 +20,7 @@ export type Document = {
   created_at: string;
   updated_at: string;
   turtle_data?: Record<string, unknown> | null;
+  sections?: unknown[] | null;
 };
 
 export type DocumentHistory = {

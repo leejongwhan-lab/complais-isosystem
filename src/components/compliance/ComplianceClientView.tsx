@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Scale } from "lucide-react";
+import StatCard from "@/components/common/StatCard";
 import RiskHeatmap from "@/components/common/RiskHeatmap";
 import type { HeatmapRisk } from "@/components/common/RiskHeatmap";
 
@@ -72,19 +73,11 @@ export default function ComplianceClientView({ obligations }: { obligations: Com
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 56px)" }}>
 
       {/* KPI */}
-      <div style={{ display: "flex", borderBottom: "1px solid #F0F0F0", flexShrink: 0 }}>
-        {[
-          { label: "전체 준법의무",       value: stats.total,    sub: "등록 건수",      color: "#1a1a1a" },
-          { label: "준수",                value: stats.compliant, sub: "준수 건수",      color: "#2F9E44" },
-          { label: "미준수",              value: stats.nonComp,  sub: "즉시 확인 필요", color: stats.nonComp > 0 ? "#E03131" : "#999" },
-          { label: "30일 내 검토 예정",    value: stats.upcoming, sub: "검토 필요",      color: stats.upcoming > 0 ? "#E67700" : "#999" },
-        ].map((kpi, i, arr) => (
-          <div key={kpi.label} style={{ flex: 1, padding: "18px 22px", borderRight: i < arr.length - 1 ? "1px solid #F0F0F0" : "none" }}>
-            <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 500, color: "#999", textTransform: "uppercase", letterSpacing: "0.05em" }}>{kpi.label}</p>
-            <p style={{ margin: "0 0 4px", fontSize: 26, fontWeight: 600, lineHeight: 1, color: kpi.color }}>{kpi.value}</p>
-            <p style={{ margin: 0, fontSize: 11, color: "#bbb" }}>{kpi.sub}</p>
-          </div>
-        ))}
+      <div className="card-grid" style={{ padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexShrink: 0 }}>
+        <StatCard label="전체 준법의무" value={stats.total} sub="등록 건수" />
+        <StatCard label="준수" value={stats.compliant} sub="준수 건수" color="green" />
+        <StatCard label="미준수" value={stats.nonComp} sub="즉시 확인 필요" color={stats.nonComp > 0 ? "red" : "default"} />
+        <StatCard label="30일 내 검토" value={stats.upcoming} sub="검토 필요" color={stats.upcoming > 0 ? "orange" : "default"} />
       </div>
 
       {/* 탭 툴바 */}

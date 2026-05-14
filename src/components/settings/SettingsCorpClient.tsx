@@ -70,7 +70,6 @@ const inputStyle = (editing: boolean): React.CSSProperties => ({
   outline: "none",
   color: "#1a1a1a",
   width: "100%",
-  maxWidth: 360,
   background: editing ? "#fff" : "#FAFAFA",
   cursor: editing ? "text" : "default",
 });
@@ -83,7 +82,6 @@ const textareaStyle = (editing: boolean): React.CSSProperties => ({
   outline: "none",
   color: "#1a1a1a",
   width: "100%",
-  maxWidth: 500,
   background: editing ? "#fff" : "#FAFAFA",
   cursor: editing ? "text" : "default",
   resize: "vertical" as const,
@@ -184,7 +182,7 @@ export default function SettingsCorpClient({ company }: { company: Company | nul
   );
 
   return (
-    <div style={{ padding: "28px 32px" }}>
+    <div style={{ padding: "24px 28px" }}>
       {/* 헤더 */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div>
@@ -291,7 +289,7 @@ export default function SettingsCorpClient({ company }: { company: Company | nul
                 value={f[key]}
                 disabled={!editing}
                 onChange={e => setF(prev => ({ ...prev, [key]: e.target.value }))}
-                style={{ ...inputStyle(editing), maxWidth: "100%" }}
+                style={inputStyle(editing)}
               />
             </div>
           ))}

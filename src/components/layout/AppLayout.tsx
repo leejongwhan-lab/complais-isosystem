@@ -462,9 +462,9 @@ export default function AppLayout({
                 <div style={{ height: 1, background: "#F0F0F0", margin: "8px 4px 6px" }} />
               )}
               <p style={{
-                fontSize: 11, fontWeight: 600, color: "#AAAAAA",
-                textTransform: "uppercase", letterSpacing: "0.06em",
-                padding: "8px 6px 3px", margin: 0,
+                fontSize: 10, fontWeight: 700, color: "#9CA3AF",
+                textTransform: "uppercase", letterSpacing: "1px",
+                margin: "16px 12px 4px", padding: 0,
               }}>
                 {section.label}
               </p>
@@ -477,21 +477,21 @@ export default function AppLayout({
                     href={item.href}
                     style={{
                       display: "flex", alignItems: "center", gap: 8,
-                      padding: "7px 8px", borderRadius: 6, margin: "1px 0",
+                      padding: "7px 12px", borderRadius: 8, margin: "1px 0",
                       textDecoration: "none",
                       background: active ? "#EFF6FF" : "transparent",
-                      color: active ? "#3B5BDB" : "#444444",
+                      color: active ? "#2563EB" : "#374151",
                     }}
-                    className={!active ? "hover:bg-[#F5F5F5] transition-colors" : ""}
+                    className={!active ? "hover:bg-[#F9FAFB] transition-colors" : ""}
                   >
                     <span style={{ display: "flex", flexShrink: 0, opacity: active ? 1 : 0.7 }}>
                       <Icon
                         size={15}
-                        color={active ? "#3B5BDB" : "#888888"}
+                        color={active ? "#2563EB" : "#6B7280"}
                         strokeWidth={active ? 2.2 : 1.8}
                       />
                     </span>
-                    <span style={{ fontSize: 14, fontWeight: active ? 500 : 400, flex: 1 }}>
+                    <span style={{ fontSize: 13, fontWeight: active ? 600 : 500, flex: 1 }}>
                       {item.label}
                     </span>
                     {item.badge !== null && item.badge > 0 && (

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import type { Audit, AuditType } from "@/types/audit";
+import StatCard from "@/components/common/StatCard";
+import EmptyState from "@/components/common/EmptyState";
 
 const TYPE_LABEL: Record<AuditType, string> = {
   system:  "시스템심사",
@@ -59,29 +61,11 @@ export default function AuditClientView({ audits, canWrite = false }: { audits: 
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 56px)" }}>
 
       {/* ── KPI 스트립 ── */}
-      <div style={{ display: "flex", borderBottom: "1px solid #EBEBEB", flexShrink: 0 }}>
-        {[
-          { label: "전체 심사", value: stats.total,      sub: "등록 건수" },
-          { label: "진행중",    value: stats.inProgress, sub: "심사 진행" },
-          { label: "완료",      value: stats.completed,  sub: "종결",      ok: true },
-          { label: "총 부적합", value: stats.totalNc,    sub: "발견 건수", danger: stats.totalNc > 0 },
-        ].map((kpi, i, arr) => (
-          <div key={kpi.label} style={{
-            flex: 1, padding: "20px 24px",
-            borderRight: i < arr.length - 1 ? "1px solid #EBEBEB" : "none",
-          }}>
-            <p style={{ margin: "0 0 5px", fontSize: 12, fontWeight: 500, color: "#666666", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-              {kpi.label}
-            </p>
-            <p style={{
-              margin: "0 0 4px", fontSize: 32, fontWeight: 700, lineHeight: 1,
-              color: kpi.danger && kpi.value > 0 ? "#E03131" : kpi.ok ? "#2F9E44" : "#1a1a1a",
-            }}>
-              {kpi.value}
-            </p>
-            <p style={{ margin: 0, fontSize: 11, color: "#999999" }}>{kpi.sub}</p>
-          </div>
-        ))}
+      <div className="card-grid" style={{ padding: "16px 20px", borderBottom: "1px solid #EBEBEB", flexShrink: 0 }}>
+        <StatCard label="전체 심사" value={stats.total} sub="등록 건수" />
+        <StatCard label="진행중" value={stats.inProgress} sub="심사 진행" />
+        <StatCard label="완료" value={stats.completed} sub="종결" color="green" />
+        <StatCard label="총 부적합" value={stats.totalNc} sub="발견 건수" color={stats.totalNc > 0 ? "red" : "default"} />
       </div>
 
       {/* ── 툴바 ── */}
@@ -165,8 +149,13 @@ export default function AuditClientView({ audits, canWrite = false }: { audits: 
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: "center", padding: "48px 0", fontSize: 14, color: "#999999" }}>
-                  {audits.length === 0 ? "등록된 심사가 없습니다." : "해당하는 심사가 없습니다."}
+                <td colSpan={9}>
+                  <EmptyState
+                    icon={audits.length === 0 ? "🔍" : "📋"}
+                    title={audits.length === 0 ? "아직 심사가 없습니다" : "해당하는 심사가 없습니다"}
+                    description={audits.length === 0 ? "첫 내부심사를 계획해보세요." : undefined}
+                    action={audits.length === 0 ? { label: "심사 계획 등록", href: "/audit/new" } : undefined}
+                  />
                 </td>
               </tr>
             ) : (

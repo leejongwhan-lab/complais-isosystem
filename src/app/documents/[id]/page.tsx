@@ -6,17 +6,18 @@ import AppLayout from "@/components/layout/AppLayoutServer";
 import ApprovalPanel from "@/components/documents/ApprovalPanel";
 import AIReviewPanel from "@/components/documents/AIReviewPanel";
 import WorkflowActions from "@/components/documents/WorkflowActions";
-import { supabase } from "@/lib/supabase";
-import { getUserProfile } from "@/lib/supabase-server";
+import { getUserProfile, createSupabaseServerClient } from "@/lib/supabase-server";
+import { getCompany } from "@/lib/company";
 import { canWrite as checkCanWrite } from "@/lib/permissions";
 import type { Document, DocumentSection, DocumentApproval, DocumentVersion, DocumentHistory } from "@/types/document";
 import { Pencil, Clock, ChevronLeft } from "lucide-react";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import PrintButton from "@/components/print/PrintButton";
 import PrintLayout from "@/components/print/PrintLayout";
-import TurtleDiagramSection from "@/components/documents/TurtleDiagramSection";
 import type { TurtleData } from "@/components/documents/TurtleDiagram";
 import DocNumberEditor from "@/components/documents/DocNumberEditor";
+import DocumentBody from "@/components/documents/DocumentBody";
+import type { Section } from "@/types/sections";
 
 // ── 상수 ──────────────────────────────────────────────────────
 const LAYER_COLOR: Record<string, { color: string; bg: string }> = {
@@ -145,37 +146,11 @@ function ApprovalTimeline({ approvals }: { approvals: DocumentApproval[] }) {
   );
 }
 
-function HistoryItem({ item }: { item: DocumentHistory }) {
-  const color = HISTORY_COLORS[item.action] ?? "#bbb";
-  const label = HISTORY_LABELS[item.action] ?? item.action;
-  const dt    = new Date(item.created_at);
-  const fmt   = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")} ${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
-
-  return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-      <div style={{
-        width: 10, height: 10, borderRadius: "50%",
-        background: color, flexShrink: 0, marginTop: 4,
-      }} />
-      <div style={{ flex: 1 }}>
-        <p style={{ margin: 0, fontSize: 13, color: "#1a1a1a", lineHeight: 1.5 }}>
-          <span style={{ color: "#999", fontSize: 12 }}>{fmt}</span>
-          {" — "}
-          {item.actor_name && <span style={{ fontWeight: 600 }}>{item.actor_name}</span>}
-          {item.actor_name && <span style={{ color: "#555" }}>이 </span>}
-          <span style={{ color, fontWeight: 500 }}>{label}</span>
-        </p>
-        {item.note && (
-          <p style={{ margin: "2px 0 0", fontSize: 12, color: "#999" }}>{item.note}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ── 메인 컨텐츠 ───────────────────────────────────────────────
 async function DocumentContent({ id }: { id: string }) {
-  const [profile, docRes, sectionsRes, approvalsRes, versionsRes, historyRes] = await Promise.all([
+  const supabase = await createSupabaseServerClient();
+  const [company, profile, docRes, sectionsRes, approvalsRes, versionsRes, historyRes] = await Promise.all([
+    getCompany(),
     getUserProfile(),
     supabase.from("documents").select("*").eq("id", id).single(),
     supabase.from("document_sections").select("*").eq("document_id", id).order("section_order"),
@@ -189,6 +164,7 @@ async function DocumentContent({ id }: { id: string }) {
   const doc       = docRes.data as Document;
   const turtleData = (doc.turtle_data ?? null) as TurtleData | null;
   const sections  = (sectionsRes.data  ?? []) as DocumentSection[];
+  const richSections = (Array.isArray(doc.sections) ? doc.sections : []) as Section[];
   const approvals = (approvalsRes.data ?? []) as DocumentApproval[];
   const versions  = (versionsRes.data  ?? []) as DocumentVersion[];
   const history   = (historyRes.data   ?? []) as DocumentHistory[];
@@ -200,7 +176,24 @@ async function DocumentContent({ id }: { id: string }) {
   const canEdit = writeOk && (doc.status === "draft" || doc.status === "review");
 
   return (
-    <PrintLayout docNumber={doc.doc_number} title={doc.title} version={doc.version}>
+    <PrintLayout
+      docNumber={doc.doc_number}
+      title={doc.title}
+      version={doc.version}
+      status={doc.status}
+      layer={doc.layer}
+      isoClause={doc.related_iso ?? undefined}
+      ownerName={doc.owner_name ?? undefined}
+      companyName={company?.company_name ?? undefined}
+      approvals={approvals}
+      richSections={richSections.length > 0 ? richSections : undefined}
+      versions={versions.map(v => ({
+        version: v.version,
+        change_reason: v.change_reason,
+        changed_by: v.changed_by,
+        created_at: v.created_at,
+      }))}
+    >
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 56px)" }}>
 
       {/* 상태 스텝퍼 */}
@@ -283,43 +276,17 @@ async function DocumentContent({ id }: { id: string }) {
             </div>
           </div>
 
-          {/* 거북이표 */}
-          <TurtleDiagramSection
+          <DocumentBody
             documentId={doc.id}
             docType={doc.doc_type}
-            initialData={turtleData}
+            richSections={richSections}
+            legacySections={sections}
+            turtleData={turtleData}
+            history={history}
             canWrite={writeOk}
+            historyColors={HISTORY_COLORS}
+            historyLabels={HISTORY_LABELS}
           />
-
-          {/* 섹션 본문 */}
-          <div style={{ padding: "24px 32px", display: "flex", flexDirection: "column", gap: 28, maxWidth: 720 }}>
-            {sections.length > 0 ? sections.map(s => (
-              <div key={s.id}>
-                <h2 style={{ margin: "0 0 8px", fontSize: 14, fontWeight: 700, color: "#1a1a1a" }}>{s.section_title}</h2>
-                {s.content ? (
-                  <p style={{ margin: 0, fontSize: 13, color: "#555", lineHeight: 1.75, whiteSpace: "pre-wrap" }}>
-                    {s.content}
-                  </p>
-                ) : (
-                  <p style={{ margin: 0, fontSize: 13, color: "#bbb", fontStyle: "italic" }}>내용 없음</p>
-                )}
-              </div>
-            )) : (
-              <p style={{ fontSize: 13, color: "#bbb" }}>등록된 섹션이 없습니다.</p>
-            )}
-          </div>
-
-          {/* 변경 이력 */}
-          <div style={{ padding: "24px 32px", borderTop: "1px solid #F0F0F0" }}>
-            <h2 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 700, color: "#1a1a1a" }}>변경 이력</h2>
-            {history.length === 0 ? (
-              <p style={{ fontSize: 13, color: "#bbb" }}>이력이 없습니다.</p>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {history.map(h => <HistoryItem key={h.id} item={h} />)}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* ── 우측: 패널 ── */}

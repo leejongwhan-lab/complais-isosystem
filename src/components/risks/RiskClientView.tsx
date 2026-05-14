@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import RiskHeatmap from "@/components/common/RiskHeatmap";
 import type { Risk, RiskLevel, RiskStatus } from "@/types/risk";
+import StatCard from "@/components/common/StatCard";
 
 const LEVEL_STYLE: Record<RiskLevel, { label: string; color: string; bg: string }> = {
   critical: { label: "매우높음", color: "#E03131", bg: "#FECACA" },
@@ -46,29 +47,11 @@ export default function RiskClientView({ risks, canWrite = false }: { risks: Ris
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 56px)" }}>
 
       {/* ── KPI 스트립 ── */}
-      <div style={{ display: "flex", borderBottom: "1px solid #EBEBEB", flexShrink: 0 }}>
-        {[
-          { label: "전체 리스크", value: stats.total,    sub: "등록 건수" },
-          { label: "매우높음",    value: stats.critical, sub: "즉시 대응", danger: stats.critical > 0 },
-          { label: "높음",        value: stats.high,     sub: "관리 필요", warn: stats.high > 0 },
-          { label: "열린 리스크", value: stats.open,     sub: "처리 중" },
-        ].map((kpi, i, arr) => (
-          <div key={kpi.label} style={{
-            flex: 1, padding: "20px 24px",
-            borderRight: i < arr.length - 1 ? "1px solid #EBEBEB" : "none",
-          }}>
-            <p style={{ margin: "0 0 5px", fontSize: 12, fontWeight: 500, color: "#666666", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-              {kpi.label}
-            </p>
-            <p style={{
-              margin: "0 0 4px", fontSize: 32, fontWeight: 700, lineHeight: 1,
-              color: kpi.danger && kpi.value > 0 ? "#E03131" : kpi.warn && kpi.value > 0 ? "#E67700" : "#1a1a1a",
-            }}>
-              {kpi.value}
-            </p>
-            <p style={{ margin: 0, fontSize: 11, color: "#999999" }}>{kpi.sub}</p>
-          </div>
-        ))}
+      <div className="card-grid" style={{ padding: "16px 20px", borderBottom: "1px solid #EBEBEB", flexShrink: 0 }}>
+        <StatCard label="전체 리스크" value={stats.total} sub="등록 건수" />
+        <StatCard label="매우높음" value={stats.critical} sub="즉시 대응" color={stats.critical > 0 ? "red" : "default"} />
+        <StatCard label="높음" value={stats.high} sub="관리 필요" color={stats.high > 0 ? "orange" : "default"} />
+        <StatCard label="열린 리스크" value={stats.open} sub="처리 중" />
       </div>
 
       {/* ── 본문 2컬럼 ── */}

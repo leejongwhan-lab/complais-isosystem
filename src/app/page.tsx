@@ -189,7 +189,7 @@ async function DashboardContent() {
         ))}
       </div>
 
-      <div style={{ padding: 24, display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
+      <div style={{ padding: 24, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, alignItems: "stretch" }}>
         {todos.map((todo) => {
           const tone = toneColor(todo.tone);
           return (
@@ -203,6 +203,7 @@ async function DashboardContent() {
                 padding: "16px 16px 14px",
                 background: tone.bg,
                 display: "block",
+                height: "100%",
               }}
             >
               <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: 12 }}>
@@ -217,14 +218,14 @@ async function DashboardContent() {
         })}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 20, padding: "0 24px 24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: 20, padding: "0 24px 24px", alignItems: "start" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <section style={{ border: "1px solid #E5E5E5", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+          <section style={{ border: "1px solid #E5E5E5", borderRadius: 12, overflow: "hidden", background: "#fff", display: "flex", flexDirection: "column", minHeight: 300 }}>
             <div style={{ padding: "12px 16px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <strong style={{ fontSize: 13, color: "#1a1a1a" }}>이번 주 우선 처리</strong>
               <Link href="/capa" style={{ fontSize: 12, color: "#3B5BDB", textDecoration: "none" }}>전체 보기</Link>
             </div>
-            <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
               {capas.length === 0 && audits.length === 0 && risks.length === 0 && (
                 <p style={{ margin: 0, padding: 8, fontSize: 13, color: "#777" }}>긴급하게 처리할 항목이 없습니다.</p>
               )}
@@ -255,12 +256,12 @@ async function DashboardContent() {
             </div>
           </section>
 
-          <section style={{ border: "1px solid #E5E5E5", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+          <section style={{ border: "1px solid #E5E5E5", borderRadius: 12, overflow: "hidden", background: "#fff", display: "flex", flexDirection: "column", minHeight: 300 }}>
             <div style={{ padding: "12px 16px", borderBottom: "1px solid #E5E5E5", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <strong style={{ fontSize: 13, color: "#1a1a1a" }}>최근 운영 문서</strong>
               <Link href="/documents" style={{ fontSize: 12, color: "#3B5BDB", textDecoration: "none" }}>문서관리</Link>
             </div>
-            <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
               {documents.length === 0 && <p style={{ margin: 0, padding: 8, fontSize: 13, color: "#777" }}>아직 등록된 문서가 없습니다.</p>}
               {documents.slice(0, 6).map((doc) => (
                 <Link key={doc.id} href={`/documents/${doc.id}`} style={{ textDecoration: "none", border: "1px solid #F0F0F0", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, color: "#1a1a1a" }}>
@@ -278,11 +279,11 @@ async function DashboardContent() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          <section style={{ border: "1px solid #E5E5E5", borderRadius: 12, overflow: "hidden", background: "#fff" }}>
+          <section style={{ border: "1px solid #E5E5E5", borderRadius: 12, overflow: "hidden", background: "#fff", display: "flex", flexDirection: "column", minHeight: 300 }}>
             <div style={{ padding: "12px 16px", borderBottom: "1px solid #E5E5E5" }}>
               <strong style={{ fontSize: 13, color: "#1a1a1a" }}>예정 일정</strong>
             </div>
-            <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ flex: 1, overflowY: "auto", minHeight: 0, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
               {audits.length === 0 && trainings.length === 0 && (
                 <p style={{ margin: 0, padding: 8, fontSize: 13, color: "#777" }}>가까운 예정 일정이 없습니다.</p>
               )}

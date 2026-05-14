@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import type { Training, TrainingType, TrainingStatus } from "@/types/training";
+import StatCard from "@/components/common/StatCard";
 
 const TYPE_LABEL: Record<TrainingType, string> = {
   internal: "내부교육",
@@ -71,29 +72,11 @@ export default function TrainingClientView({ trainings }: { trainings: Training[
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 56px)" }}>
 
       {/* ── KPI 스트립 ── */}
-      <div style={{ display: "flex", borderBottom: "1px solid #F0F0F0", flexShrink: 0 }}>
-        {[
-          { label: "연간 계획",  value: String(stats.total),              sub: "등록 건수" },
-          { label: "완료",       value: String(stats.completed),           sub: "종결",        ok: true },
-          { label: "이수율",     value: `${stats.completionRate}%`,        sub: "전체 대비" },
-          { label: "미이수 인원", value: String(stats.missing),            sub: "미완료",      warn: stats.missing > 0 },
-        ].map((kpi, i, arr) => (
-          <div key={kpi.label} style={{
-            flex: 1, padding: "18px 22px",
-            borderRight: i < arr.length - 1 ? "1px solid #F0F0F0" : "none",
-          }}>
-            <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 500, color: "#999", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {kpi.label}
-            </p>
-            <p style={{
-              margin: "0 0 4px", fontSize: 26, fontWeight: 600, lineHeight: 1,
-              color: kpi.ok ? "#2F9E44" : kpi.warn && parseInt(kpi.value) > 0 ? "#E67700" : "#1a1a1a",
-            }}>
-              {kpi.value}
-            </p>
-            <p style={{ margin: 0, fontSize: 11, color: "#bbb" }}>{kpi.sub}</p>
-          </div>
-        ))}
+      <div className="card-grid" style={{ padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexShrink: 0 }}>
+        <StatCard label="연간 계획" value={String(stats.total)} sub="등록 건수" />
+        <StatCard label="완료" value={String(stats.completed)} sub="종결" color="green" />
+        <StatCard label="이수율" value={`${stats.completionRate}%`} sub="전체 대비" />
+        <StatCard label="미이수 인원" value={String(stats.missing)} sub="미완료" color={stats.missing > 0 ? "orange" : "default"} />
       </div>
 
       {/* ── 툴바 ── */}

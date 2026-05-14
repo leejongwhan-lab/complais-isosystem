@@ -6,6 +6,7 @@ import { getUserProfile } from "@/lib/supabase-server";
 import { canWrite } from "@/lib/permissions";
 import { Plus } from "lucide-react";
 import type { ManagementReview, ReviewStatus } from "@/types/risk";
+import StatCard from "@/components/common/StatCard";
 
 const STATUS_STYLE: Record<ReviewStatus, { label: string; color: string; bg: string }> = {
   planned:   { label: "예정",   color: "#999",    bg: "#F5F5F5" },
@@ -43,30 +44,11 @@ async function ReviewsContent() {
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 56px)" }}>
 
       {/* KPI 스트립 */}
-      <div style={{ display: "flex", borderBottom: "1px solid #F0F0F0", flexShrink: 0 }}>
-        {[
-          { label: "전체 경영검토", value: reviews.length,                      sub: "등록 건수" },
-          { label: "완료",          value: completed,                            sub: "종결",     ok: true },
-          { label: "예정",          value: reviews.length - completed,           sub: "진행 대기" },
-          { label: "최근 검토",     value: reviews[0]?.review_date ?? "—",       sub: "검토일",   text: true },
-        ].map((kpi, i, arr) => (
-          <div key={kpi.label} style={{
-            flex: 1, padding: "18px 22px",
-            borderRight: i < arr.length - 1 ? "1px solid #F0F0F0" : "none",
-          }}>
-            <p style={{ margin: "0 0 5px", fontSize: 11, fontWeight: 500, color: "#999", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              {kpi.label}
-            </p>
-            <p style={{
-              margin: "0 0 4px", lineHeight: 1,
-              fontSize: kpi.text ? 16 : 26, fontWeight: 600,
-              color: kpi.ok ? "#2F9E44" : "#1a1a1a",
-            }}>
-              {kpi.value}
-            </p>
-            <p style={{ margin: 0, fontSize: 11, color: "#bbb" }}>{kpi.sub}</p>
-          </div>
-        ))}
+      <div className="card-grid" style={{ padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexShrink: 0 }}>
+        <StatCard label="전체 경영검토" value={reviews.length} sub="등록 건수" />
+        <StatCard label="완료" value={completed} sub="종결" color="green" />
+        <StatCard label="예정" value={reviews.length - completed} sub="진행 대기" />
+        <StatCard label="최근 검토" value={reviews[0]?.review_date ?? "—"} sub="검토일" />
       </div>
 
       {/* 툴바 */}

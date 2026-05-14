@@ -1,19 +1,22 @@
 import AppLayout from "@/components/layout/AppLayoutServer";
 import { getCompany } from "@/lib/company";
 import { getUserProfile, createSupabaseServerClient } from "@/lib/supabase-server";
-import { supabase } from "@/lib/supabase";
 import SettingsTabsClient from "@/components/settings/SettingsTabsClient";
 import type { Branch } from "@/components/settings/SettingsBranchClient";
 
 export default async function SettingsPage() {
-  const [rawCompany, profile] = await Promise.all([getCompany(), getUserProfile()]);
+  const [rawCompany, profile, authClient] = await Promise.all([
+    getCompany(),
+    getUserProfile(),
+    createSupabaseServerClient(),
+  ]);
 
   // company_code 없으면 name_en 또는 company_name 앞 영문 3자리로 자동 생성
   let company = rawCompany;
   if (company && !company.company_code) {
     const src = company.name_en || company.company_name || "";
     const code = src.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 3) || "COM";
-    await supabase.from("companies").update({ company_code: code }).eq("id", company.id);
+    await authClient.from("companies").update({ company_code: code }).eq("id", company.id);
     company = { ...company, company_code: code };
   }
 
@@ -22,7 +25,7 @@ export default async function SettingsPage() {
   const isAdmin = profile?.role === "admin";
 
   const branches: Branch[] = company
-    ? ((await supabase
+    ? ((await authClient
         .from("company_branches")
         .select("*")
         .eq("company_id", company.id)
@@ -31,7 +34,6 @@ export default async function SettingsPage() {
 
   let users: { id: string; full_name: string; role: string; department: string | null }[] = [];
   if (isAdmin && profile?.company_id) {
-    const authClient = await createSupabaseServerClient();
     const { data } = await authClient
       .from("profiles")
       .select("id, full_name, role, department")

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
@@ -23,6 +23,13 @@ const STATUS_LABEL: Record<string, string> = {
 export default function FormRecordClient({ template, record }: FormRecordClientProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!saved) return;
+    const timer = setTimeout(() => setSaved(false), 4000);
+    return () => clearTimeout(timer);
+  }, [saved]);
 
   async function handleSave(data: FormData, status: "draft" | "completed") {
     await supabase
@@ -31,10 +38,18 @@ export default function FormRecordClient({ template, record }: FormRecordClientP
       .eq("id", record.id);
     router.refresh();
     setEditing(false);
+    setSaved(true);
   }
 
   return (
-    <PrintLayout docNumber={record.record_number} title={template.form_name}>
+    <>
+    <PrintLayout
+      docNumber={record.record_number}
+      title={template.form_name}
+      version={record.status === "approved" ? "승인" : "작성중"}
+      isForm={true}
+      formCode={template.form_code}
+    >
     <div style={{ padding: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
         <Breadcrumb items={[
@@ -100,5 +115,26 @@ export default function FormRecordClient({ template, record }: FormRecordClientP
       />
     </div>
     </PrintLayout>
+
+    {/* 저장 완료 토스트 */}
+    {saved && (
+      <div style={{
+        position: "fixed", bottom: 24, right: 24, zIndex: 1000,
+        background: "#1A1A2E", color: "#fff", borderRadius: 8,
+        padding: "10px 18px", fontSize: 13, fontWeight: 500,
+        display: "flex", alignItems: "center", gap: 10,
+        boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
+      }}>
+        <span style={{ color: "#4ADE80" }}>✓</span>
+        서식이 저장되었습니다
+        <button
+          onClick={() => window.print()}
+          style={{ marginLeft: 8, padding: "3px 10px", borderRadius: 5, border: "1px solid rgba(255,255,255,0.3)", background: "transparent", color: "#fff", fontSize: 12, cursor: "pointer" }}
+        >
+          인쇄하기
+        </button>
+      </div>
+    )}
+  </>
   );
 }

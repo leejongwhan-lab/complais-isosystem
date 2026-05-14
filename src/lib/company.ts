@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import { supabase } from "./supabase";
 import { createSupabaseServerClient } from "./supabase-server";
 
 export type Company = {
@@ -44,11 +43,12 @@ export type Company = {
 };
 
 export async function getCompany(): Promise<Company | null> {
+  const authSupabase = await createSupabaseServerClient();
+
   const cookieStore = await cookies();
   let companyId = cookieStore.get("company_id")?.value;
 
   if (!companyId) {
-    const authSupabase = await createSupabaseServerClient();
     const { data: { user } } = await authSupabase.auth.getUser();
     if (!user) return null;
 
@@ -63,7 +63,7 @@ export async function getCompany(): Promise<Company | null> {
 
   if (!companyId) return null;
 
-  const { data } = await supabase
+  const { data } = await authSupabase
     .from("companies")
     .select(
       "id, company_name, company_code, business_type, management_rep, " +

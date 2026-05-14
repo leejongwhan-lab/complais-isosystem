@@ -8,6 +8,7 @@ import type {
   EnvAspect, HazardAssessment, ProcessHazardAssessment,
   MaterialBalance, LegalRequirement, RiskLevel,
 } from "@/types/environment";
+import StatCard from "@/components/common/StatCard";
 
 // ── 상수 ──────────────────────────────────────────────────────
 
@@ -70,26 +71,6 @@ function scoreLevel(score: number): RiskLevel {
   if (score >= 11) return "high";
   if (score >= 6)  return "medium";
   return "low";
-}
-
-// ── KPI 스트립 ────────────────────────────────────────────────
-
-function KpiStrip({ items }: { items: { label: string; value: string | number; sub: string; color?: string }[] }) {
-  return (
-    <div style={{ display: "flex", borderBottom: "1px solid #F0F0F0", flexShrink: 0 }}>
-      {items.map((kpi, i, arr) => (
-        <div key={kpi.label} style={{ flex: 1, padding: "13px 18px", borderRight: i < arr.length - 1 ? "1px solid #F0F0F0" : "none" }}>
-          <p style={{ margin: "0 0 3px", fontSize: 11, fontWeight: 500, color: "#999", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            {kpi.label}
-          </p>
-          <p style={{ margin: "0 0 2px", fontSize: 22, fontWeight: 600, lineHeight: 1, color: kpi.color ?? "#1a1a1a" }}>
-            {kpi.value}
-          </p>
-          <p style={{ margin: 0, fontSize: 11, color: "#bbb" }}>{kpi.sub}</p>
-        </div>
-      ))}
-    </div>
-  );
 }
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────
@@ -232,12 +213,12 @@ export default function EnvironmentClientView({ aspects, hazards, materials, law
       {/* ══ 탭 ①: 환경영향평가 ══ */}
       {activeTab === "환경영향평가" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <KpiStrip items={[
-            { label: "전체 환경측면", value: aspectStats.total,       sub: "등록 건수" },
-            { label: "중요환경측면",  value: aspectStats.significant,  sub: "중점 관리",    color: aspectStats.significant > 0 ? "#3B5BDB" : undefined },
-            { label: "높음 이상",     value: aspectStats.highPlus,     sub: "점수 11+",     color: aspectStats.highPlus > 0 ? "#E67700" : undefined },
-            { label: "법규 관련",     value: aspectStats.hasLegal,     sub: "법적 요구사항" },
-          ]} />
+          <div className="card-grid" style={{ padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexShrink: 0 }}>
+            <StatCard label="전체 환경측면" value={aspectStats.total} sub="등록 건수" />
+            <StatCard label="중요환경측면" value={aspectStats.significant} sub="중점 관리" color={aspectStats.significant > 0 ? "blue" : "default"} />
+            <StatCard label="높음 이상" value={aspectStats.highPlus} sub="점수 11+" color={aspectStats.highPlus > 0 ? "orange" : "default"} />
+            <StatCard label="법규 관련" value={aspectStats.hasLegal} sub="법적 요구사항" />
+          </div>
           <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
             {/* 좌: 히트맵 */}
             <div style={{ flex: 55, overflowY: "auto", padding: "20px 24px", borderRight: "1px solid #E5E5E5" }}>
@@ -334,12 +315,12 @@ export default function EnvironmentClientView({ aspects, hazards, materials, law
           {/* ── 서브탭 A: KRAS ── */}
           {hazardSub === "kras" && (
             <>
-              <KpiStrip items={[
-                { label: "전체 위험요인", value: krasStats.total,    sub: "등록 건수" },
-                { label: "매우높음",      value: krasStats.critical,  sub: "즉시 대응", color: krasStats.critical > 0 ? "#E03131" : undefined },
-                { label: "높음",          value: krasStats.high,      sub: "관리 필요", color: krasStats.high > 0 ? "#E67700" : undefined },
-                { label: "개선 필요",     value: krasStats.action,    sub: "매우높음+높음" },
-              ]} />
+              <div className="card-grid" style={{ padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexShrink: 0 }}>
+                <StatCard label="전체 위험요인" value={krasStats.total} sub="등록 건수" />
+                <StatCard label="매우높음" value={krasStats.critical} sub="즉시 대응" color={krasStats.critical > 0 ? "red" : "default"} />
+                <StatCard label="높음" value={krasStats.high} sub="관리 필요" color={krasStats.high > 0 ? "orange" : "default"} />
+                <StatCard label="개선 필요" value={krasStats.action} sub="매우높음+높음" />
+              </div>
               <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
                 {/* 좌: 히트맵 (개선 전 기준) */}
                 <div style={{ flex: 55, overflowY: "auto", padding: "18px 22px", borderRight: "1px solid #E5E5E5" }}>
@@ -427,12 +408,12 @@ export default function EnvironmentClientView({ aspects, hazards, materials, law
           {/* ── 서브탭 B: 공정위험성평가 (PHA) ── */}
           {hazardSub === "pha" && (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-              <KpiStrip items={[
-                { label: "전체 공정위험",  value: phaStats.total,              sub: "등록 건수" },
-                { label: "매우높음",       value: phaStats.critical,           sub: "즉시 대응", color: phaStats.critical > 0 ? "#E03131" : undefined },
-                { label: "높음",           value: phaStats.high,               sub: "관리 필요", color: phaStats.high > 0 ? "#E67700" : undefined },
-                { label: "권고사항",       value: phaStats.hasRecommendation,  sub: "조치 필요" },
-              ]} />
+              <div className="card-grid" style={{ padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexShrink: 0 }}>
+                <StatCard label="전체 공정위험" value={phaStats.total} sub="등록 건수" />
+                <StatCard label="매우높음" value={phaStats.critical} sub="즉시 대응" color={phaStats.critical > 0 ? "red" : "default"} />
+                <StatCard label="높음" value={phaStats.high} sub="관리 필요" color={phaStats.high > 0 ? "orange" : "default"} />
+                <StatCard label="권고사항" value={phaStats.hasRecommendation} sub="조치 필요" />
+              </div>
               <div style={{ padding: "10px 14px", borderBottom: "1px solid #E5E5E5", display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
                 <Link
                   href="/environment/hazards/new?type=pha"
@@ -536,12 +517,12 @@ export default function EnvironmentClientView({ aspects, hazards, materials, law
       {/* ══ 탭 ④: 법규등록부 ══ */}
       {activeTab === "법규등록부" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <KpiStrip items={[
-            { label: "전체 법규", value: lawStats.total,        sub: "등록 건수" },
-            { label: "준수",      value: lawStats.compliant,    sub: "적합",     color: "#2F9E44" },
-            { label: "미준수",    value: lawStats.nonCompliant, sub: "조치 필요", color: lawStats.nonCompliant > 0 ? "#E03131" : undefined },
-            { label: "준수율",    value: lawStats.total > 0 ? `${Math.round(lawStats.compliant / lawStats.total * 100)}%` : "—", sub: "compliance rate", color: "#3B5BDB" },
-          ]} />
+          <div className="card-grid" style={{ padding: "16px 20px", borderBottom: "1px solid #F0F0F0", flexShrink: 0 }}>
+            <StatCard label="전체 법규" value={lawStats.total} sub="등록 건수" />
+            <StatCard label="준수" value={lawStats.compliant} sub="적합" color="green" />
+            <StatCard label="미준수" value={lawStats.nonCompliant} sub="조치 필요" color={lawStats.nonCompliant > 0 ? "red" : "default"} />
+            <StatCard label="준수율" value={lawStats.total > 0 ? `${Math.round(lawStats.compliant / lawStats.total * 100)}%` : "—"} sub="compliance rate" color="blue" />
+          </div>
           <div style={{ padding: "10px 16px", borderBottom: "1px solid #E5E5E5", display: "flex", justifyContent: "flex-end", flexShrink: 0 }}>
             <Link href="/environment/legal/new"
               style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", borderRadius: 6, textDecoration: "none", fontSize: 12, fontWeight: 600, color: "#fff", background: "#3B5BDB" }}

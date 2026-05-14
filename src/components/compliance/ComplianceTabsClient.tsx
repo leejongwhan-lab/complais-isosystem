@@ -59,6 +59,7 @@ export default function ComplianceTabsClient({
           <ComplianceESGClient
             companyId={companyId}
             kpiMaster={kpiMaster}
+            allKpis={allKpis}
             kpiActuals={kpiActuals}
             autoValues={autoValues}
             currentYear={currentYear}

@@ -50,6 +50,7 @@ function trendIcon(direction: KpiMaster["direction"], prev: number | null, curr:
 export default function ComplianceESGClient({
   companyId,
   kpiMaster,
+  allKpis,
   kpiActuals: initialActuals,
   autoValues,
   currentYear,
@@ -57,6 +58,7 @@ export default function ComplianceESGClient({
 }: {
   companyId: string;
   kpiMaster: KpiMaster[];
+  allKpis?: KpiMaster[];
   kpiActuals: KpiActual[];
   autoValues: Record<string, number>;
   currentYear: number;
@@ -64,10 +66,16 @@ export default function ComplianceESGClient({
 }) {
   const [tab, setTab] = useState<"E" | "S" | "G">("E");
   const [myOnly, setMyOnly] = useState(false);
+  const [showSelected, setShowSelected] = useState(false);
   const [actuals, setActuals] = useState<KpiActual[]>(initialActuals);
   const [editing, setEditing] = useState<Record<string, boolean>>({});
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
+
+  const hasSelections = (selectedCodes?.length ?? 0) > 0;
+  const baseKpis = (showSelected && hasSelections)
+    ? kpiMaster
+    : (allKpis ?? kpiMaster);
 
   const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4];
 
@@ -78,10 +86,7 @@ export default function ComplianceESGClient({
 
   function getKpiCode(kpi: KpiMaster) { return kpi.kpi_code; }
 
-  const selSet = selectedCodes && selectedCodes.length > 0 ? new Set(selectedCodes) : null;
-
-  const filtered = kpiMaster
-    .filter(k => selSet ? selSet.has(k.kpi_code) : true)
+  const filtered = baseKpis
     .filter(k => k.category_esg === tab)
     .filter(k => !myOnly || k.is_mandatory)
     .sort((a, b) => a.sort_order - b.sort_order);
@@ -152,7 +157,7 @@ export default function ComplianceESGClient({
       </div>
 
       {/* ── KPI 선택 안내 (선택 없을 때) ── */}
-      {!selSet && (
+      {!hasSelections && (
         <div style={{
           padding: "8px 20px", background: "#FFFBEB", borderBottom: "1px solid #FDE68A",
           display: "flex", alignItems: "center", gap: 8, flexShrink: 0,
@@ -170,6 +175,32 @@ export default function ComplianceESGClient({
         padding: "10px 20px", borderBottom: "1px solid #E5E5E5",
         background: "#fff", flexShrink: 0,
       }}>
+        {/* 전체 / 내 선택만 토글 */}
+        {hasSelections && (
+          <div style={{ display: "flex", gap: 0, border: "1px solid #E5E5E5", borderRadius: 6, overflow: "hidden" }}>
+            <button
+              onClick={() => setShowSelected(false)}
+              style={{
+                padding: "4px 12px", fontSize: 12, fontWeight: 500, border: "none", cursor: "pointer",
+                background: !showSelected ? "#3B5BDB" : "#fff",
+                color: !showSelected ? "#fff" : "#777",
+              }}
+            >
+              전체 지표
+            </button>
+            <button
+              onClick={() => setShowSelected(true)}
+              style={{
+                padding: "4px 12px", fontSize: 12, fontWeight: 500, border: "none", cursor: "pointer",
+                background: showSelected ? "#3B5BDB" : "#fff",
+                color: showSelected ? "#fff" : "#777",
+                borderLeft: "1px solid #E5E5E5",
+              }}
+            >
+              내 선택만 ({selectedCodes?.length})
+            </button>
+          </div>
+        )}
         <button
           onClick={() => setMyOnly(v => !v)}
           style={{
@@ -254,15 +285,18 @@ export default function ComplianceESGClient({
                       return (
                         <td key={y} style={{ ...td, textAlign: "right" }}>
                           {isAuto && y === currentYear ? (
-                            <span style={{ fontSize: 12, fontWeight: 700, color: "#2F9E44" }}>
-                              {autoVal.toLocaleString()}
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: "#16A34A" }}>
+                                {autoVal.toLocaleString()}
+                              </span>
                               <span style={{
-                                marginLeft: 4, fontSize: 9, padding: "1px 4px", borderRadius: 3,
-                                background: "#F0FBF4", color: "#2F9E44", fontWeight: 700,
+                                fontSize: 10, padding: "1px 5px", borderRadius: 99,
+                                background: "#DCFCE7", color: "#16A34A", fontWeight: 700,
+                                letterSpacing: "0.2px",
                               }}>🔗 자동</span>
                             </span>
                           ) : (
-                            <span style={{ fontSize: 12, color: v != null ? "#1a1a1a" : "#ccc" }}>
+                            <span style={{ fontSize: 13, color: v != null ? "#1a1a1a" : "#D1D5DB" }}>
                               {v != null ? v.toLocaleString() : "—"}
                             </span>
                           )}

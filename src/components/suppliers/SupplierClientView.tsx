@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import type { Supplier, SupplierStatus, SupplierGrade } from "@/types/supplier";
+import StatCard from "@/components/common/StatCard";
 
 const GRADE_STYLE: Record<SupplierGrade, { color: string; bg: string }> = {
   A: { color: "#2F9E44", bg: "#F0FBF4" },
@@ -81,29 +82,11 @@ export default function SupplierClientView({ suppliers, canWrite = false }: { su
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 56px)" }}>
 
       {/* ── KPI 스트립 ── */}
-      <div style={{ display: "flex", borderBottom: "1px solid #EBEBEB", flexShrink: 0 }}>
-        {[
-          { label: "전체 공급자", value: stats.total,       sub: "등록 업체" },
-          { label: "승인",        value: stats.approved,    sub: "거래 승인",    ok: true },
-          { label: "조건부",      value: stats.conditional, sub: "조건부 승인" },
-          { label: "평가 대기",   value: stats.pending,     sub: "미평가",        warn: stats.pending > 0 },
-        ].map((kpi, i, arr) => (
-          <div key={kpi.label} style={{
-            flex: 1, padding: "20px 24px",
-            borderRight: i < arr.length - 1 ? "1px solid #EBEBEB" : "none",
-          }}>
-            <p style={{ margin: "0 0 5px", fontSize: 12, fontWeight: 500, color: "#666666", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-              {kpi.label}
-            </p>
-            <p style={{
-              margin: "0 0 4px", fontSize: 32, fontWeight: 700, lineHeight: 1,
-              color: kpi.ok ? "#2F9E44" : kpi.warn && kpi.value > 0 ? "#E67700" : "#1a1a1a",
-            }}>
-              {kpi.value}
-            </p>
-            <p style={{ margin: 0, fontSize: 11, color: "#999999" }}>{kpi.sub}</p>
-          </div>
-        ))}
+      <div className="card-grid" style={{ padding: "16px 20px", borderBottom: "1px solid #EBEBEB", flexShrink: 0 }}>
+        <StatCard label="전체 공급자" value={stats.total} sub="등록 업체" />
+        <StatCard label="승인" value={stats.approved} sub="거래 승인" color="green" />
+        <StatCard label="조건부" value={stats.conditional} sub="조건부 승인" color="orange" />
+        <StatCard label="평가 대기" value={stats.pending} sub="미평가" color={stats.pending > 0 ? "orange" : "default"} />
       </div>
 
       {/* ── 툴바 ── */}
