@@ -246,6 +246,15 @@ export default function ComplianceESGClient({
             </tr>
           </thead>
           <tbody>
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={years.length + 4} style={{ padding: "32px", textAlign: "center", color: "#999", fontSize: 13 }}>
+                  {(allKpis?.length ?? 0) === 0 && kpiMaster.length === 0
+                    ? "KPI 마스터 데이터 없음. Supabase SQL Editor에서 schema_corp.sql을 실행하세요."
+                    : `${tab === "E" ? "환경" : tab === "S" ? "사회" : "거버넌스"} 카테고리에 해당하는 KPI가 없습니다.`}
+                </td>
+              </tr>
+            )}
             {filtered.map(kpi => {
               const isAuto = getKpiCode(kpi) in autoValues;
               const autoVal = autoValues[getKpiCode(kpi)];

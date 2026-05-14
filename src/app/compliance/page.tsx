@@ -23,6 +23,10 @@ export default async function CompliancePage() {
       ? supabase.from("kpi_master_selections").select("kpi_code").eq("company_id", companyId)
       : Promise.resolve({ data: [], error: null }),
   ]);
+  if (kpiMasterRes.error) console.error("[compliance] kpi_master error:", kpiMasterRes.error.message);
+  if (kpiActualsRes.error) console.error("[compliance] kpi_actuals error:", kpiActualsRes.error.message);
+  if (kpiSelectionsRes.error) console.error("[compliance] kpi_master_selections error:", kpiSelectionsRes.error.message);
+
   const allKpis = (kpiMasterRes.data ?? []) as KpiMaster[];
   const kpiSelections = ((kpiSelectionsRes.data ?? []) as { kpi_code: string }[]).map(r => r.kpi_code);
   const kpiMaster = kpiSelections.length > 0

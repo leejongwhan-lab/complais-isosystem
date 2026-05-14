@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Company } from "@/lib/company";
 
@@ -126,6 +126,12 @@ export default function SettingsCorpClient({ company }: { company: Company | nul
   });
 
   const [f, setF] = useState<Fields>(init);
+
+  // Re-sync if company prop arrives after initial render (e.g. hydration or navigation)
+  useEffect(() => {
+    setF(init());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [company?.id]);
 
   const iafCode = getIafFromKsic(f.ksic_code);
 

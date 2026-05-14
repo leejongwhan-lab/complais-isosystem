@@ -52,30 +52,25 @@ export async function getCompany(): Promise<Company | null> {
     const { data: { user } } = await authSupabase.auth.getUser();
     if (!user) return null;
 
-    const { data: profile } = await authSupabase
+    const { data: profile, error: profileErr } = await authSupabase
       .from("profiles")
       .select("company_id")
       .eq("id", user.id)
       .single();
 
+    if (profileErr) console.error("[getCompany] profiles query error:", profileErr.message, "| uid:", user.id);
     companyId = (profile as { company_id?: string | null } | null)?.company_id ?? undefined;
+    if (!companyId) console.error("[getCompany] company_id is null on profile — user not linked to a company:", user.id);
   }
 
   if (!companyId) return null;
 
-  const { data } = await authSupabase
+  const { data, error } = await authSupabase
     .from("companies")
-    .select(
-      "id, company_name, company_code, business_type, management_rep, " +
-      "std_iso9001, std_iso14001, std_iso45001, std_iatf, std_iso13485, " +
-      "std_iso50001, std_iso37001, std_iso37301, std_iso27001, " +
-      "std_iso22000, std_iso22301, std_iso42001, std_iso19443, std_iso22716, plan, " +
-      "name_en, biz_no, corp_no, ceo_name, address, address_en, tel, website, " +
-      "iaf_code, ksic_code, scope_kr, scope_en, " +
-      "employee_count_hq, employee_count_out, employee_full, employee_part, email"
-    )
+    .select("*")
     .eq("id", companyId)
     .single();
 
+  if (error) console.error("[getCompany] companies query error:", error.message, "| companyId:", companyId);
   return (data as Company | null) ?? null;
 }
