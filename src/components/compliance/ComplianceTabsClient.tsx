@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import ComplianceESGClient, { type KpiMaster, type KpiActual } from "./ComplianceESGClient";
+import ComplianceESGClient, { type KpiActual } from "./ComplianceESGClient";
 import ComplianceMBClient, { type MBItem, type MBActual, type EmissionFactor } from "./ComplianceMBClient";
 import ComplianceCarbonClient from "./ComplianceCarbonClient";
 import ComplianceESGMasterClient from "./ComplianceESGMasterClient";
@@ -16,19 +16,17 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 export default function ComplianceTabsClient({
-  companyId, kpiMaster, kpiActuals, autoValues,
+  companyId, kpiActuals, autoValues,
   mbItems, mbActuals, emissionFactors, currentYear,
-  allKpis, kpiSelections,
+  kpiSelections,
 }: {
   companyId: string;
-  kpiMaster: KpiMaster[];
   kpiActuals: KpiActual[];
   autoValues: Record<string, number>;
   mbItems: MBItem[];
   mbActuals: MBActual[];
   emissionFactors: EmissionFactor[];
   currentYear: number;
-  allKpis: KpiMaster[];
   kpiSelections: string[];
 }) {
   const [tab, setTab] = useState<TabKey>("esg");
@@ -58,8 +56,6 @@ export default function ComplianceTabsClient({
         {tab === "esg" && (
           <ComplianceESGClient
             companyId={companyId}
-            kpiMaster={kpiMaster}
-            allKpis={allKpis}
             kpiActuals={kpiActuals}
             autoValues={autoValues}
             currentYear={currentYear}
@@ -85,7 +81,6 @@ export default function ComplianceTabsClient({
         )}
         {tab === "master" && (
           <ComplianceESGMasterClient
-            allKpis={allKpis}
             initialSelections={kpiSelections}
           />
         )}

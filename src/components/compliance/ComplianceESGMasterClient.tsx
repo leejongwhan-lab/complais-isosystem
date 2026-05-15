@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import type { KpiMaster } from "./ComplianceESGClient";
 
 const ESG_COLORS = {
@@ -12,15 +13,28 @@ const ESG_COLORS = {
 type FilterKey = "all" | "E" | "S" | "G" | "mandatory" | "selected";
 
 export default function ComplianceESGMasterClient({
-  allKpis,
   initialSelections,
 }: {
-  allKpis: KpiMaster[];
   initialSelections: string[];
 }) {
+  const [allKpis, setAllKpis] = useState<KpiMaster[]>([]);
+  const [masterLoading, setMasterLoading] = useState(true);
   const [selections, setSelections] = useState<Set<string>>(new Set(initialSelections));
   const [filter, setFilter] = useState<FilterKey>("all");
   const [toggling, setToggling] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    supabase
+      .from("kpi_master")
+      .select("*")
+      .order("category_esg")
+      .order("sort_order")
+      .then(({ data, error }) => {
+        if (error) console.error("[ESGMasterClient] kpi_master error:", error.message);
+        else setAllKpis((data ?? []) as KpiMaster[]);
+        setMasterLoading(false);
+      });
+  }, []);
 
   const filtered = allKpis.filter(k => {
     if (filter === "E") return k.category_esg === "E";
@@ -89,6 +103,15 @@ export default function ComplianceESGMasterClient({
     { label: `필수 ${mandatoryCount}개`, color: "#E67700", bg: "#FFF9DB" },
     { label: `✓ ${selections.size}개 선택`, color: "#2F9E44", bg: "#EBFBEE" },
   ];
+
+  if (masterLoading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", gap: 10 }}>
+        <div className="w-5 h-5 border-2 border-[#3B5BDB] border-t-transparent rounded-full animate-spin" />
+        <span style={{ fontSize: 13, color: "#999" }}>KPI 마스터 로딩 중...</span>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>

@@ -6,10 +6,9 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, FileText, ClipboardCheck, AlertCircle,
   Building2, GraduationCap, Settings, Bell, Search, ChevronDown,
-  ShieldAlert, ClipboardList, Leaf, FileSpreadsheet, FileX,
-  Zap, Shield, Scale, Lock, Plus, HardHat, Smartphone, MessageSquare,
-  UtensilsCrossed, ShieldCheck, Stethoscope, Bot, Sparkles,
-  LogOut, User, BarChart3,
+  ShieldAlert, ClipboardList, FileX, Library,
+  HardHat, Smartphone, MessageSquare, CalendarDays, XCircle, Truck,
+  LogOut, BarChart3, BookOpen, Award,
 } from "lucide-react";
 import type { Company } from "@/lib/company";
 import { ROLE_LABELS } from "@/lib/permissions";
@@ -22,9 +21,14 @@ const TITLE_MAP: Array<{ prefix: string; exact?: boolean; title: string }> = [
   { prefix: "/tbm",                           title: "TBM 관리" },
   { prefix: "/forms/",                       title: "서식" },
   { prefix: "/forms",                        title: "서식 라이브러리" },
+  { prefix: "/documents/manuals",            title: "매뉴얼" },
+  { prefix: "/documents/procedures",         title: "절차서·지침서" },
   { prefix: "/documents/new",                title: "새 문서 작성" },
   { prefix: "/documents/",                   title: "문서 상세" },
   { prefix: "/documents",                    title: "문서관리" },
+  { prefix: "/records/daily",               title: "공정·현장 기록" },
+  { prefix: "/records/periodic",            title: "생산·물류 기록" },
+  { prefix: "/standards/",                  title: "표준별 필수기록" },
   { prefix: "/capa/",                        title: "CAPA 상세" },
   { prefix: "/capa",                         title: "CAPA 관리" },
   { prefix: "/nonconformity",                title: "부적합 관리" },
@@ -106,11 +110,13 @@ const STD_BADGES = [
 ] as const;
 
 type NavItem = {
-  icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
+  icon?: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
   label: string;
   href: string;
-  badge: number | null;
-  danger: boolean;
+  badge?: number | null;
+  danger?: boolean;
+  retention?: string;
+  isSubHeader?: boolean;
 };
 
 type NavSection = { label: string; items: NavItem[] };
@@ -264,109 +270,83 @@ export default function AppLayout({
   };
 
   const allSections = useMemo((): NavSection[] => {
-    const adminOnly = userRole === "admin";
+    // Group 0 — no header, dashboard only
+    const group0: NavSection = {
+      label: "",
+      items: [
+        { icon: LayoutDashboard, label: "대시보드", href: "/" },
+      ],
+    };
 
-    const base: NavSection[] = [
-      {
-        label: "문서",
-        items: [
-          { icon: LayoutDashboard, label: "대시보드",        href: "/",          badge: null,              danger: false },
-          { icon: FileText,        label: "문서관리",        href: "/documents", badge: docCount ?? null,  danger: false },
-          { icon: FileSpreadsheet, label: "서식 라이브러리", href: "/forms",     badge: null,              danger: false },
-        ],
-      },
-      {
-        label: "품질",
-        items: [
-          { icon: ClipboardCheck, label: "CAPA",       href: "/capa",          badge: capaOpenCount ?? null, danger: true  },
-          { icon: AlertCircle,    label: "내부심사",    href: "/audit",         badge: null,                 danger: false },
-          { icon: FileX,          label: "부적합",      href: "/nonconformity", badge: null,                 danger: false },
-          { icon: ShieldAlert,    label: "리스크 관리", href: "/risks",         badge: null,                 danger: false },
-        ],
-      },
-      {
-        label: "경영",
-        items: [
-          { icon: Building2,     label: "공급자 관리", href: "/suppliers",         badge: null, danger: false },
-          { icon: GraduationCap, label: "교육훈련",    href: "/trainings",         badge: null, danger: false },
-          { icon: ClipboardList, label: "경영검토",    href: "/management-review", badge: null, danger: false },
-        ],
-      },
-    ];
+    // Group 1 — 시스템 문서
+    const group1: NavSection = {
+      label: "시스템 문서",
+      items: [
+        { icon: BookOpen,  label: "매뉴얼",        href: "/documents/manuals" },
+        { icon: FileText,  label: "절차서·지침서",  href: "/documents/procedures" },
+        { icon: Library,   label: "서식 라이브러리", href: "/forms" },
+      ],
+    };
 
-    const std: NavSection[] = [];
-    const has14001 = company?.std_iso14001 ?? false;
-    const has45001 = company?.std_iso45001 ?? false;
+    // Group 2 — 기록 문서 (with sub-headers)
+    const group2: NavSection = {
+      label: "기록 문서",
+      items: [
+        { label: "매일 작성",    href: "#", isSubHeader: true },
+        { icon: ClipboardCheck, label: "공정·현장 기록",  href: "/records/daily" },
+        { label: "주간·월간",    href: "#", isSubHeader: true },
+        { icon: CalendarDays,   label: "생산·물류 기록",  href: "/records/periodic" },
+        { label: "수시·발생 시", href: "#", isSubHeader: true },
+        { icon: ClipboardCheck, label: "CAPA",          href: "/capa",          badge: capaOpenCount ?? null, danger: true },
+        { icon: XCircle,        label: "부적합",         href: "/nonconformity" },
+        { icon: ShieldAlert,    label: "리스크 관리",    href: "/risks" },
+        { label: "정기",         href: "#", isSubHeader: true },
+        { icon: AlertCircle,    label: "내부심사",       href: "/audit" },
+        { icon: ClipboardList,  label: "경영검토",       href: "/management-review" },
+        { icon: Truck,          label: "공급자 관리",    href: "/suppliers" },
+        { icon: GraduationCap,  label: "교육훈련",       href: "/trainings" },
+      ],
+    };
 
-    if (has14001 && has45001) {
-      std.push({ label: "환경·안전 EHS", items: [{ icon: Leaf, label: "환경·안전", href: "/environment", badge: null, danger: false }] });
-    } else if (has14001) {
-      std.push({ label: "환경 ISO 14001", items: [{ icon: Leaf, label: "환경·안전", href: "/environment", badge: null, danger: false }] });
-    } else if (has45001) {
-      std.push({ label: "안전보건 ISO 45001", items: [{ icon: ShieldAlert, label: "위험성평가", href: "/environment", badge: null, danger: false }] });
-    }
-    if (company?.std_iso50001) std.push({ label: "에너지 ISO 50001", items: [
-      { icon: Zap,  label: "에너지 현황", href: "/energy",     badge: null, danger: false },
-      { icon: Plus, label: "사용량 기록", href: "/energy/new", badge: null, danger: false },
-    ]});
-    if (company?.std_iso37001) std.push({ label: "반부패 ISO 37001", items: [
-      { icon: Shield, label: "리스크 현황",   href: "/antibribery",           badge: null, danger: false },
-      { icon: Plus,   label: "선물·접대 신고", href: "/antibribery/gifts/new", badge: null, danger: false },
-    ]});
-    if (company?.std_iso37301) std.push({ label: "준법 ISO 37301", items: [
-      { icon: Scale, label: "준법의무",  href: "/compliance-mgmt",     badge: null, danger: false },
-      { icon: Plus,  label: "의무 등록", href: "/compliance-mgmt/new", badge: null, danger: false },
-    ]});
-    if (company?.std_iso27001) std.push({ label: "정보보안 ISO 27001", items: [
-      { icon: Lock, label: "정보자산",  href: "/infosec",     badge: null, danger: false },
-      { icon: Plus, label: "자산 등록", href: "/infosec/new", badge: null, danger: false },
-    ]});
-    if (company?.std_iso22000) std.push({ label: "식품안전 ISO 22000", items: [
-      { icon: UtensilsCrossed, label: "식품안전 관리", href: "/food-safety",       badge: null, danger: false },
-      { icon: Plus,            label: "HACCP 관리",    href: "/food-safety/haccp", badge: null, danger: false },
-    ]});
-    if (company?.std_iso22301) std.push({ label: "사업연속성 ISO 22301", items: [
-      { icon: ShieldCheck, label: "사업연속성", href: "/bcms",     badge: null, danger: false },
-      { icon: Plus,        label: "BCP 관리",   href: "/bcms/bcp", badge: null, danger: false },
-    ]});
-    if (company?.std_iso13485) std.push({ label: "의료기기 ISO 13485", items: [
-      { icon: Stethoscope, label: "의료기기 품질", href: "/medical-device",     badge: null, danger: false },
-      { icon: Plus,        label: "설계개발 이력", href: "/medical-device/dhf", badge: null, danger: false },
-    ]});
-    if (company?.std_iso42001) std.push({ label: "AI경영 ISO 42001", items: [
-      { icon: Bot,  label: "AI 경영",  href: "/ai-mgmt",       badge: null, danger: false },
-      { icon: Plus, label: "AI 리스크", href: "/ai-mgmt/risks", badge: null, danger: false },
-    ]});
-    if (company?.std_iso19443) std.push({ label: "원자력 ISO 19443", items: [
-      { icon: Zap,  label: "원자력 품질", href: "/nuclear",      badge: null, danger: false },
-      { icon: Plus, label: "ITNS 관리",   href: "/nuclear/itns", badge: null, danger: false },
-    ]});
-    if (company?.std_iso22716) std.push({ label: "화장품 ISO 22716", items: [
-      { icon: Sparkles, label: "화장품 GMP", href: "/cosmetic",       badge: null, danger: false },
-      { icon: Plus,     label: "제조 기록",   href: "/cosmetic/batch", badge: null, danger: false },
-    ]});
+    // Group 3 — 표준별 문서 (dynamic)
+    const stdItems: NavItem[] = [];
+    if (company?.std_iso9001)  stdItems.push({ icon: Award, label: "ISO 9001 필수기록",   href: "/standards/9001" });
+    if (company?.std_iso14001) stdItems.push({ icon: Award, label: "ISO 14001 필수기록",  href: "/standards/14001" });
+    if (company?.std_iso45001) stdItems.push({ icon: Award, label: "ISO 45001 필수기록",  href: "/standards/45001" });
+    if (company?.std_iatf)     stdItems.push({ icon: Award, label: "IATF 16949 필수기록", href: "/standards/iatf" });
+    if (company?.std_iso13485) stdItems.push({ icon: Award, label: "ISO 13485 필수기록",  href: "/standards/13485" });
+    if (company?.std_iso50001) stdItems.push({ icon: Award, label: "ISO 50001 필수기록",  href: "/standards/50001" });
+    if (company?.std_iso37001) stdItems.push({ icon: Award, label: "ISO 37001 필수기록",  href: "/standards/37001" });
+    if (company?.std_iso37301) stdItems.push({ icon: Award, label: "ISO 37301 필수기록",  href: "/standards/37301" });
+    if (company?.std_iso27001) stdItems.push({ icon: Award, label: "ISO 27001 필수기록",  href: "/standards/27001" });
+    if (company?.std_iso22000) stdItems.push({ icon: Award, label: "ISO 22000 필수기록",  href: "/standards/22000" });
+    if (company?.std_iso22301) stdItems.push({ icon: Award, label: "ISO 22301 필수기록",  href: "/standards/22301" });
+    if (company?.std_iso42001) stdItems.push({ icon: Award, label: "ISO 42001 필수기록",  href: "/standards/42001" });
+    if (company?.std_iso19443) stdItems.push({ icon: Award, label: "ISO 19443 필수기록",  href: "/standards/19443" });
+    if (company?.std_iso22716) stdItems.push({ icon: Award, label: "ISO 22716 필수기록",  href: "/standards/22716" });
+    const group3: NavSection = { label: "표준별 문서", items: stdItems };
 
-    const settingsItems: NavItem[] = [
-      { icon: BarChart3, label: "인증·ESG", href: "/compliance", badge: null, danger: false },
-    ];
-    if (adminOnly) {
-      settingsItems.push({ icon: Settings, label: "설정", href: "/settings", badge: null, danger: false });
-    }
+    // Group 4 — 현장 관리
+    const group4: NavSection = {
+      label: "현장 관리",
+      items: [
+        { icon: HardHat,       label: "TBM 관리",       href: "/tbm" },
+        { icon: Smartphone,    label: "현장 작업자 홈",  href: "/mobile" },
+        { icon: MessageSquare, label: "익명 제보함",     href: "/reports" },
+      ],
+    };
 
-    const tail: NavSection[] = [
-      {
-        label: "현장",
-        items: [
-          { icon: HardHat,       label: "TBM 관리",       href: "/tbm",     badge: null, danger: false },
-          { icon: Smartphone,    label: "현장 작업자 홈",  href: "/mobile",  badge: null, danger: false },
-          { icon: MessageSquare, label: "익명 제보함",     href: "/reports", badge: null, danger: false },
-        ],
-      },
-      { label: "연계·설정", items: settingsItems },
-    ];
+    // Group 5 — 인증·ESG
+    const group5: NavSection = {
+      label: "인증·ESG",
+      items: [
+        { icon: BarChart3, label: "인증·ESG 관리", href: "/compliance" },
+        { icon: Settings,  label: "설정",          href: "/settings" },
+      ],
+    };
 
-    return [...base, ...std, ...tail];
-  }, [company, userRole, docCount, capaOpenCount]);
+    return [group0, group1, group2, group3, group4, group5];
+  }, [company, capaOpenCount]);
 
   const BANNER_H = isConsultantMode ? 40 : 0;
   const TOPBAR_H = 52;
@@ -457,18 +437,30 @@ export default function AppLayout({
         {/* 메뉴 섹션 */}
         <nav style={{ flex: 1, overflowY: "auto", padding: "6px 8px 8px" }}>
           {allSections.map((section, si) => (
-            <div key={section.label} style={{ marginTop: si === 0 ? 4 : 0 }}>
+            <div key={si} style={{ marginTop: si === 0 ? 4 : 0 }}>
               {si > 0 && (
                 <div style={{ height: 1, background: "#F0F0F0", margin: "8px 4px 6px" }} />
               )}
-              <p style={{
-                fontSize: 10, fontWeight: 700, color: "#9CA3AF",
-                textTransform: "uppercase", letterSpacing: "1px",
-                margin: "16px 12px 4px", padding: 0,
-              }}>
-                {section.label}
-              </p>
-              {section.items.map(item => {
+              {section.label && (
+                <p style={{
+                  fontSize: 10, fontWeight: 700, color: "#9CA3AF",
+                  textTransform: "uppercase", letterSpacing: "1px",
+                  margin: "16px 12px 4px", padding: 0,
+                }}>
+                  {section.label}
+                </p>
+              )}
+              {section.items.map((item, itemIdx) => {
+                if (item.isSubHeader) {
+                  return (
+                    <p key={`sub-${itemIdx}`} style={{
+                      fontSize: 10, fontWeight: 600, fontStyle: "italic",
+                      color: "#C4C9D4", margin: 0, padding: "8px 12px 2px",
+                    }}>
+                      {item.label}
+                    </p>
+                  );
+                }
                 const Icon   = item.icon;
                 const active = isActive(item.href, pathname);
                 return (
@@ -484,17 +476,19 @@ export default function AppLayout({
                     }}
                     className={!active ? "hover:bg-[#F9FAFB] transition-colors" : ""}
                   >
-                    <span style={{ display: "flex", flexShrink: 0, opacity: active ? 1 : 0.7 }}>
-                      <Icon
-                        size={15}
-                        color={active ? "#2563EB" : "#6B7280"}
-                        strokeWidth={active ? 2.2 : 1.8}
-                      />
-                    </span>
+                    {Icon && (
+                      <span style={{ display: "flex", flexShrink: 0, opacity: active ? 1 : 0.7 }}>
+                        <Icon
+                          size={15}
+                          color={active ? "#2563EB" : "#6B7280"}
+                          strokeWidth={active ? 2.2 : 1.8}
+                        />
+                      </span>
+                    )}
                     <span style={{ fontSize: 13, fontWeight: active ? 600 : 500, flex: 1 }}>
                       {item.label}
                     </span>
-                    {item.badge !== null && item.badge > 0 && (
+                    {(item.badge ?? null) !== null && (item.badge ?? 0) > 0 && (
                       <span style={{
                         fontSize: 11, fontWeight: 700,
                         padding: "1px 6px", borderRadius: 100,
@@ -502,6 +496,14 @@ export default function AppLayout({
                         color: item.danger ? "#DC2626" : "#3B5BDB",
                       }}>
                         {item.badge}
+                      </span>
+                    )}
+                    {item.retention && (
+                      <span style={{
+                        fontSize: 9, fontWeight: 600, padding: "1px 4px", borderRadius: 3,
+                        background: "#F5F5F5", color: "#999",
+                      }}>
+                        {item.retention}
                       </span>
                     )}
                   </Link>

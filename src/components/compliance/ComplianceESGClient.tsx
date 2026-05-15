@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 export type KpiMaster = {
@@ -49,16 +49,12 @@ function trendIcon(direction: KpiMaster["direction"], prev: number | null, curr:
 
 export default function ComplianceESGClient({
   companyId,
-  kpiMaster = [],
-  allKpis = [],
   kpiActuals: initialActuals,
   autoValues,
   currentYear,
   selectedCodes,
 }: {
   companyId: string;
-  kpiMaster?: KpiMaster[];
-  allKpis?: KpiMaster[];
   kpiActuals: KpiActual[];
   autoValues: Record<string, number>;
   currentYear: number;
@@ -72,10 +68,38 @@ export default function ComplianceESGClient({
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
 
+  const [masters, setMasters] = useState<KpiMaster[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
+
+  async function loadKpi() {
+    setLoading(true);
+    setFetchError(false);
+    try {
+      const { data, error } = await supabase
+        .from("kpi_master")
+        .select("*")
+        .order("category_esg")
+        .order("sort_order");
+      if (error) {
+        console.error("[ESGClient] kpi_master error:", error.message);
+        setFetchError(true);
+      } else {
+        setMasters((data ?? []) as KpiMaster[]);
+      }
+    } catch (e) {
+      console.error("[ESGClient] kpi_master fetch threw:", e);
+      setFetchError(true);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => { loadKpi(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const hasSelections = (selectedCodes?.length ?? 0) > 0;
-  const baseKpis = (showSelected && hasSelections)
-    ? kpiMaster
-    : (allKpis ?? kpiMaster);
+  const baseKpis = (showSelected && hasSelections && selectedCodes)
+    ? masters.filter(k => selectedCodes.includes(k.kpi_code))
+    : masters;
 
   const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4];
 
@@ -126,6 +150,34 @@ export default function ComplianceESGClient({
   }
 
   const esgColor = ESG_COLORS[tab];
+
+  if (loading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", gap: 10 }}>
+        <div className="w-5 h-5 border-2 border-[#3B5BDB] border-t-transparent rounded-full animate-spin" />
+        <span style={{ fontSize: 13, color: "#999" }}>KPI 데이터 로딩 중...</span>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: 12 }}>
+        <p style={{ margin: 0, fontSize: 13, color: "#999" }}>
+          KPI 마스터 데이터를 불러오는 중입니다. 잠시 후 새로고침하세요.
+        </p>
+        <button
+          onClick={loadKpi}
+          style={{
+            padding: "6px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600,
+            background: "#3B5BDB", color: "#fff", border: "none", cursor: "pointer",
+          }}
+        >
+          새로고침
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -246,25 +298,7 @@ export default function ComplianceESGClient({
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (allKpis?.length ?? 0) === 0 && kpiMaster.length === 0 && (
-              <tr>
-                <td colSpan={years.length + 4} style={{ padding: "48px", textAlign: "center" }}>
-                  <p style={{ margin: "0 0 14px", fontSize: 13, color: "#999" }}>
-                    KPI 마스터 데이터를 불러오는 중입니다. 잠시 후 새로고침하세요.
-                  </p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    style={{
-                      padding: "6px 18px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-                      background: "#3B5BDB", color: "#fff", border: "none", cursor: "pointer",
-                    }}
-                  >
-                    새로고침
-                  </button>
-                </td>
-              </tr>
-            )}
-            {filtered.length === 0 && (allKpis?.length ?? 0) > 0 && (
+            {filtered.length === 0 && (
               <tr>
                 <td colSpan={years.length + 4} style={{ padding: "32px", textAlign: "center", color: "#999", fontSize: 13 }}>
                   {tab === "E" ? "환경" : tab === "S" ? "사회" : "거버넌스"} 카테고리에 해당하는 KPI가 없습니다.
